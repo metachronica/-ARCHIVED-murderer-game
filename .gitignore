@@ -1,7 +1,10 @@
+*.log
+
 node_modules
 bower_components
 
 server/build
 static/css/build
 static/js/build
+static/js/*.min.js
 static/bower

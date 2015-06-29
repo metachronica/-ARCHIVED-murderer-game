@@ -82,11 +82,11 @@ function stylesTask(isWatcher, cb) {
 	
 	gulp.src('front-end-src/styles/main.styl')
 		.pipe(isWatcher ? watch('front-end-src/styles/**/*.styl') : gutil.noop())
-		.pipe(buildStart('styles'))
 		.pipe(plumber(plumberOpts))
-		.pipe(sourcemaps.init())
+		.pipe(buildStart('styles'))
+		.pipe( ! argv.min ? sourcemaps.init() : gutil.noop())
 		.pipe(stylus({ compress: !!argv.min }))
-		.pipe(sourcemaps.write())
+		.pipe( ! argv.min ? sourcemaps.write() : gutil.noop())
 		.pipe(buildFinish('styles'))
 		.pipe(gulp.dest('static/css/build'))
 		.on('finish', cb);
@@ -106,12 +106,12 @@ function scriptsTask(isWatcher, cb) {
 	
 	gulp.src('front-end-src/scripts/**/*.ls')
 		.pipe(isWatcher ? watch('front-end-src/scripts/**/*.ls') : gutil.noop())
-		.pipe(buildStart('scripts'))
 		.pipe(plumber(plumberOpts))
-		.pipe(sourcemaps.init())
+		.pipe(buildStart('scripts'))
+		.pipe( ! argv.min ? sourcemaps.init() : gutil.noop())
 		.pipe(livescript({ bare: true }))
 		.pipe(argv.min ? uglify({ preserveComments: 'some' }) : gutil.noop())
-		.pipe(sourcemaps.write())
+		.pipe( ! argv.min ? sourcemaps.write() : gutil.noop())
 		.pipe(buildFinish('scripts'))
 		.pipe(gulp.dest('static/js/build'))
 		.on('finish', cb);
@@ -119,6 +119,21 @@ function scriptsTask(isWatcher, cb) {
 
 gulp.task('scripts', ['clean-scripts'], function (cb) { scriptsTask(false, cb); });
 gulp.task('scripts-watch', function (cb) { scriptsTask(true, cb); });
+
+
+// minified require.js
+
+gulp.task('clean-requirejs', function (cb) {
+	del(['static/js/require.min.js'], cb);
+});
+
+gulp.task('requirejs', ['clean-requirejs'], function (cb) {
+	gulp.src('static/js/require.js')
+		.pipe(uglify({ preserveComments: 'some' }))
+		.pipe(rename(function (f) { f.basename += '.min'; }))
+		.pipe(gulp.dest('static/js'))
+		.on('end', cb);
+});
 
 
 // bower
@@ -143,6 +158,7 @@ gulp.task('bower', ['clean-bower'], function (cb) {
 gulp.task('clean', [
 	'clean-server',
 	'clean-styles',
+	'clean-requirejs',
 	'clean-scripts',
 	'clean-bower',
 ]);
@@ -156,4 +172,4 @@ gulp.task('distclean', ['clean'], function (cb) {
 // main tasks
 
 gulp.task('watch', ['server-watch', 'styles-watch', 'scripts-watch']);
-gulp.task('default', ['server', 'styles', 'scripts']);
+gulp.task('default', ['server', 'styles', 'requirejs', 'scripts']);

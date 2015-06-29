@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "name": "murderer-game",
+  "version": "0.0.0",
+  "homepage": "https://github.com/metachronica/murderer-game",
+  "authors": [
+    "Viacheslav Lotsmanov <lotsmanov89@gmail.com>"
+  ],
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "jquery": "~2.1.4"
+  }
+}

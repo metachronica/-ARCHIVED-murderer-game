@@ -4,3 +4,4 @@ bower_components
 server/build
 static/css/build
 static/js/build
+static/bower

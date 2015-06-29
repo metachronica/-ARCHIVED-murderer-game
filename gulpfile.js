@@ -14,6 +14,7 @@ var
 	stylus     = require('gulp-stylus'),
 	uglify     = require('gulp-uglify'),
 	argv       = require('yargs').argv,
+	bower      = require('gulp-bower'),
 	
 	plumberOpts = {
 		errorHanlder: function (err) {
@@ -118,6 +119,38 @@ function scriptsTask(isWatcher, cb) {
 
 gulp.task('scripts', ['clean-scripts'], function (cb) { scriptsTask(false, cb); });
 gulp.task('scripts-watch', function (cb) { scriptsTask(true, cb); });
+
+
+// bower
+
+gulp.task('clean-bower', function (cb) {
+	del([
+		'static/bower',
+		'bower_components',
+	], cb);
+});
+
+gulp.task('bower', ['clean-bower'], function (cb) {
+	
+	bower()
+		.pipe(gulp.dest('static/bower'))
+		.on('end', cb);
+});
+
+
+// master clean tasks
+
+gulp.task('clean', [
+	'clean-server',
+	'clean-styles',
+	'clean-scripts',
+	'clean-bower',
+]);
+
+// clean all builded and deploy stuff
+gulp.task('distclean', ['clean'], function (cb) {
+	del(['node_modules'], cb);
+});
 
 
 // main tasks

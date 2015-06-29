@@ -9,10 +9,12 @@ require! {
 	\./v : {revision}
 }
 
-traits =
+traits = {
+	revision
 	static-file: (file)->
 		while (file.char-at 0) is '/'
 			file = file.slice 1
 		"#{path.join \/static, file}?v=#{revision}"
+}
 
 export get = -> {} <<< traits

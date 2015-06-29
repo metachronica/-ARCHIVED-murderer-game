@@ -1,5 +1,7 @@
 *.log
 
+config.yaml
+
 node_modules
 bower_components
 

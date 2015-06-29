@@ -7,5 +7,14 @@
  */
 
 require! {
-	\child_process : {spawn}
+	\child_process : {spawn-sync}
 }
+
+res = spawn-sync \git, <[rev-parse HEAD]>
+
+if res.status isnt 0 or not res.stdout? or res.stdout.to-string!.length <= 0
+	throw new Error 'Cannot get head git commit id'
+
+const git-head-id = res.stdout.to-string! - /\s/g
+
+export revision = git-head-id

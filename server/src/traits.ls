@@ -6,13 +6,13 @@
 
 require! {
 	path
-	\./v
+	\./v : {revision}
 }
 
 traits =
 	static-file: (file)->
 		while (file.char-at 0) is '/'
 			file = file.slice 1
-		"#{path.join \/static, file}?v=#{123}"
+		"#{path.join \/static, file}?v=#{revision}"
 
 export get = -> {} <<< traits

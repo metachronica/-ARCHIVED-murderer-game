@@ -4,4 +4,6 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-console.log \test
+($) <-! define <[jquery]>
+
+console.log \^_^, $

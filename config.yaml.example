@@ -1,3 +1,5 @@
+DEBUG: False
+
 SERVER:
   PORT: 8501
   HOST: localhost

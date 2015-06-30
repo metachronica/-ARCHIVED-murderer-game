@@ -43,7 +43,13 @@ requirejs.config {
 	paths
 }
 
+($) <-! require <[jquery]>
+
+$ html .data \cfg, cfg
+
 unless document.get-element-by-id \game
 	throw new Error 'Fak. No game. No murders.'
+
+<-! $ # dom ready
 
 require <[game]>

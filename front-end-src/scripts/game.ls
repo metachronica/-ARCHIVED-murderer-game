@@ -7,6 +7,9 @@
 ($, LoaderView) <-! define <[jquery views/loader]>
 
 $game = $ \#game
-throw new Error 'Fak. No game. No murders.' if $game.length is 0
+$at-start = $ \.at-start, $game
 
-new LoaderView!
+(err, loader-view) <-! new LoaderView $game
+throw err if err?
+
+$at-start.remove!

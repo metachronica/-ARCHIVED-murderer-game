@@ -4,9 +4,10 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-($, LoaderView) <-! define <[jquery views/loader]>
 
-$game = $ \#game
-throw new Error 'Fak. No game. No murders.' if $game.length is 0
+// paths
 
-new LoaderView!
+$rev-qs = '?v=' + REVISION
+$root-path = STATIC_DIR
+$fonts-path = pathjoin($root-path, 'fonts')
+$images-path = pathjoin($root-path, 'images')

@@ -4,9 +4,14 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-($, LoaderView) <-! define <[jquery views/loader]>
+($) <- define <[jquery]>
 
-$game = $ \#game
-throw new Error 'Fak. No game. No murders.' if $game.length is 0
-
-new LoaderView!
+class LoaderView
+	!->
+		console.log \test
+	
+	hide: (cb)!->
+		void
+	
+	destroy: (cb)!->
+		void

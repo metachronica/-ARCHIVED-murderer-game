@@ -15,6 +15,8 @@ var
 	uglify     = require('gulp-uglify'),
 	argv       = require('yargs').argv,
 	bower      = require('gulp-bower'),
+	nib        = require('nib'),
+	spawnSync  = require('child_process').spawnSync,
 	
 	plumberOpts = {
 		errorHanlder: function (err) {
@@ -47,6 +49,21 @@ function buildFinish(logName) {
 	});
 }
 
+var REVISION = (function () {
+	
+	var res = spawnSync('git', ['rev-parse', 'HEAD']);
+	
+	if (
+		res.status !== 0
+		|| ! res.stdout
+		|| res.stdout.toString().length <= 0
+	) {
+		throw new Error('Cannot get head git commit id')
+	}
+	
+	return res.stdout.toString().replace(/\s/g, '');
+})();
+
 
 // back-end livescript
 
@@ -78,22 +95,31 @@ gulp.task('clean-styles', function (cb) {
 	del(['static/css/build'], cb);
 });
 
-function stylesTask(isWatcher, cb) {
+gulp.task('styles', ['clean-styles'], function (cb) {
 	
 	gulp.src('front-end-src/styles/main.styl')
-		.pipe(isWatcher ? watch('front-end-src/styles/**/*.styl') : gutil.noop())
 		.pipe(plumber(plumberOpts))
 		.pipe(buildStart('styles'))
 		.pipe( ! argv.min ? sourcemaps.init() : gutil.noop())
-		.pipe(stylus({ compress: !!argv.min }))
+		.pipe(stylus({
+			compress : !!argv.min,
+			use      : [
+				nib(),
+				function (style) {
+					style.define('REVISION', REVISION);
+					style.define('STATIC_DIR', '/static/');
+				},
+			],
+		}))
 		.pipe( ! argv.min ? sourcemaps.write() : gutil.noop())
 		.pipe(buildFinish('styles'))
 		.pipe(gulp.dest('static/css/build'))
 		.on('finish', cb);
-}
+});
 
-gulp.task('styles', ['clean-styles'], function (cb) { stylesTask(false, cb); });
-gulp.task('styles-watch', function (cb) { stylesTask(true, cb); });
+gulp.task('styles-watch', ['styles'], function () {
+	gulp.watch('front-end-src/styles/**/*.styl', ['styles']);
+});
 
 
 // front-end scripts
@@ -128,6 +154,7 @@ gulp.task('clean-requirejs', function (cb) {
 });
 
 gulp.task('requirejs', ['clean-requirejs'], function (cb) {
+	
 	gulp.src('static/js/require.js')
 		.pipe(uglify({ preserveComments: 'some' }))
 		.pipe(rename(function (f) { f.basename += '.min'; }))
@@ -160,11 +187,10 @@ gulp.task('clean', [
 	'clean-styles',
 	'clean-requirejs',
 	'clean-scripts',
-	'clean-bower',
 ]);
 
 // clean all builded and deploy stuff
-gulp.task('distclean', ['clean'], function (cb) {
+gulp.task('distclean', ['clean', 'clean-bower'], function (cb) {
 	del(['node_modules'], cb);
 });
 

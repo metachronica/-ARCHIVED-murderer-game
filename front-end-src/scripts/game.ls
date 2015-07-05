@@ -4,12 +4,31 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-($, LoaderView) <-! define <[jquery views/loader]>
+(
+	$, B, loader-view, Str
+) <- define <[
+	jquery backbone views/loader Str
+]>
 
-$game = $ \#game
-$at-start = $ \.at-start, $game
+{Model} = B
+{LoaderView} = loader-view
 
-(err, loader-view) <-! new LoaderView $game
-throw err if err?
+class Game extends Model
+	
+	@at-start-selector = \.at-start
+	
+	initialize: (opts)->
+		super ...
+		
+		loader = new LoaderView do
+			game: @
+			cb: !~>
+				
+				# remove before js load text
+				$ @@at-start-selector, @get \$el .remove!
+				
+				loader.render!
+				
+				@get \$el .html loader.$el
 
-$at-start.remove!
+{Game}

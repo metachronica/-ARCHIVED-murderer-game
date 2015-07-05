@@ -20,10 +20,23 @@ body
 	color white
 	font 400 normal 22px/24px 'Old Standard', serif
 	font-weight 400
+	
+	// Snap.svg stuff
+	& > svg
+		visibility hidden
+		overflow hidden
+		absolute left -1px top -1px
+		width 0
+		height 0
+		max-width 0
+		max-height 0
+		opacity 0
 
 #game
-	box-sizing border-box
-	padding 20px
 	height 100%
+	
+	.at-start
+		box-sizing border-box
+		padding 20px
 	
 	@import 'views/loader'

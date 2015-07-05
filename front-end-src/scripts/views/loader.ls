@@ -4,34 +4,44 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-($, get-svg, make-svg) <- define <[jquery utils/get-svg utils/make-svg]>
+(
+	$, B, Snap, basic-view, templates
+) <- define <[
+	jquery backbone snap views/basic utils/templates
+]>
 
-class LoaderView
+{BasicView} = basic-view
+
+class LoaderView extends BasicView
 	
-	($parent, cb)!->
-		
-		(err, $svg) <-! get-svg \loading-screen.svg
-		return cb err if err?
-		
-		@$parent = $parent
-		@$el = $ \<div/>, class: \loader
-		
-		@$death = make-svg.svg!
-		
-		@$death .css do
-			width: 3000px
-			height: 3000px
-		
-		$ '.svgid-death', $svg .append-to @$death
-		
-		@$el.append @$death
-		
-		::attach.call @
-		
-		cb null, @
+	class-name: \loader
 	
-	is-attached: false
-	attach: !-> @$parent.append @$el unless @is-attached
+	template: templates.loader
 	
-	destroy: (cb)!->
-		void
+	initialize: (opts)->
+		super ...
+		
+		cfg = $ \html .data \cfg
+		
+		(f) <~! Snap.load "#{cfg.static-dir}/images/loading-screen.svg"
+		
+		death-src = f.select \#death
+		
+		@death = Snap!
+		@death.append death-src
+		death-el = @death.select \#death
+		death-el-bbox = death-el.get-b-box!
+		
+		@death.attr do
+			width: death-el-bbox.width + 4
+			height: death-el-bbox.height + 4
+		
+		death-el.attr transform: "T-#{death-el-bbox.x-2},-#{death-el-bbox.y-2}"
+		
+		opts.cb?!
+	
+	render: !->
+		@$el.html @template @model
+		@death.append-to <| @$el.find \.death .get 0
+
+{LoaderView}

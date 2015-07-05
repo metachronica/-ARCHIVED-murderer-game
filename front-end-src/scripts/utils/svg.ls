@@ -4,13 +4,11 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-.loader
-	display block
-	height 100%
-	
-	.load-text
-		font-size 32px
-		line-height 34px
-	
-	.death
-		display block
+(snap) <- define <[snap]>
+
+out = {}
+
+preload = ->
+	void
+
+out <<< {preload}

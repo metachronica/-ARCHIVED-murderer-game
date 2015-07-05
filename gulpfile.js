@@ -17,6 +17,7 @@ var
 	bower      = require('gulp-bower'),
 	nib        = require('nib'),
 	spawnSync  = require('child_process').spawnSync,
+	wrap       = require('gulp-wrap'),
 	
 	plumberOpts = {
 		errorHanlder: function (err) {
@@ -85,8 +86,8 @@ function serverTask(isWatcher, cb) {
 		.on('finish', cb);
 }
 
-gulp.task('server', ['clean-server'], function (cb) { serverTask(false, cb); });
-gulp.task('server-watch', function (cb) { serverTask(true, cb); });
+gulp.task('server', ['clean-server'], serverTask.bind(null, false));
+gulp.task('server-watch', ['clean-server'], serverTask.bind(null, true));
 
 
 // front-end styles
@@ -143,8 +144,8 @@ function scriptsTask(isWatcher, cb) {
 		.on('finish', cb);
 }
 
-gulp.task('scripts', ['clean-scripts'], function (cb) { scriptsTask(false, cb); });
-gulp.task('scripts-watch', function (cb) { scriptsTask(true, cb); });
+gulp.task('scripts', ['clean-scripts'], scriptsTask.bind(null, false));
+gulp.task('scripts-watch', ['clean-scripts'], scriptsTask.bind(null, true));
 
 
 // minified require.js
@@ -161,6 +162,39 @@ gulp.task('requirejs', ['clean-requirejs'], function (cb) {
 		.pipe(gulp.dest('static/js'))
 		.on('end', cb);
 });
+
+
+// prelude-ls
+
+gulp.task('clean-prelude', function (cb) {
+	del(['static/js/prelude/build'], cb);
+});
+
+gulp.task('prelude-amd', ['clean-prelude'], function (cb) {
+	
+	gulp.src('static/js/prelude/src/*.js')
+		.pipe(wrap([
+			"define(['module'], function (module) {",
+			'<%= contents %>',
+			'});',
+		].join('\n\n')))
+		.pipe(gulp.dest('static/js/prelude/build'))
+		.on('end', cb);
+});
+
+gulp.task('prelude-min', ['prelude-amd'], function (cb) {
+	
+	gulp.src([
+		'static/js/prelude/build/*.js',
+		'!static/js/prelude/build/*.min.js',
+	])
+		.pipe(uglify({ preserveComments: 'some' }))
+		.pipe(rename(function (f) { f.basename += '.min'; }))
+		.pipe(gulp.dest('static/js/prelude/build'))
+		.on('end', cb);
+});
+
+gulp.task('prelude', ['prelude-min']);
 
 
 // bower
@@ -185,17 +219,28 @@ gulp.task('bower', ['clean-bower'], function (cb) {
 gulp.task('clean', [
 	'clean-server',
 	'clean-styles',
-	'clean-requirejs',
 	'clean-scripts',
 ]);
 
 // clean all builded and deploy stuff
-gulp.task('distclean', ['clean', 'clean-bower'], function (cb) {
+gulp.task('distclean', [
+	'clean',
+	'clean-bower',
+	'clean-prelude',
+], function (cb) {
 	del(['node_modules'], cb);
 });
 
 
 // main tasks
 
-gulp.task('watch', ['server-watch', 'styles-watch', 'scripts-watch']);
-gulp.task('default', ['server', 'styles', 'requirejs', 'scripts']);
+gulp.task('watch', [
+	'server-watch',
+	'styles-watch',
+	'scripts-watch',
+]);
+gulp.task('default', [
+	'server',
+	'styles',
+	'scripts',
+]);

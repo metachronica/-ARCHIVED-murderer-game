@@ -26,6 +26,12 @@ paths = {}
 libs-paths =
 	jquery:
 		"jquery/dist/jquery#{unless cfg.is-debug then '.min' else ''}"
+	snap:
+		"snap.svg/dist/snap.svg#{unless cfg.is-debug then '-min' else ''}"
+	underscore:
+		"underscore/underscore#{unless cfg.is-debug then '-min' else ''}"
+	backbone:
+		"backbone/backbone#{unless cfg.is-debug then '-min' else ''}"
 
 # add static directory prefix for libs paths
 libs-paths =
@@ -35,6 +41,20 @@ libs-paths =
 	|> pairs-to-obj
 
 paths <<< libs-paths
+
+# prelude-ls paths
+<[Func List Num Obj Str]>
+.map (-> [
+	it
+	"
+		#{cfg.static-dir}
+		/js/prelude/build/
+		#{it}
+		#{unless cfg.is-debug then '.min' else ''}
+	"
+])
+.reduce ((it, next)-> it[next.0] = next.1 ; it), {}
+|> (!-> paths <<< it)
 
 requirejs.config {
 	base-url: "#{cfg.static-dir}/js/build"
@@ -52,4 +72,10 @@ unless document.get-element-by-id \game
 
 <-! $ # dom ready
 
-require <[game]>
+(game) <-! require <[game]>
+
+{Game} = game
+
+# initialize game
+new Game do
+	$el: $ \#game

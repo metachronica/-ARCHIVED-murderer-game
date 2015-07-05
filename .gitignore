@@ -8,5 +8,6 @@ bower_components
 server/build
 static/css/build
 static/js/build
+static/js/prelude/build
 static/js/*.min.js
 static/bower

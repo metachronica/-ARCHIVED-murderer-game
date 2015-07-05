@@ -18,7 +18,7 @@ class LoaderView extends BasicView
 	
 	template: templates.loader
 	
-	initialize: (opts)->
+	initialize: (opts)!->
 		super ...
 		
 		cfg = $ \html .data \cfg

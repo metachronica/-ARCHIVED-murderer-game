@@ -16,6 +16,6 @@ class BasicView extends View
 	
 	initialize: (opts)!->
 		super ...
-		@game = opts.game
+		@game-model = opts.game-model
 
 {BasicView}

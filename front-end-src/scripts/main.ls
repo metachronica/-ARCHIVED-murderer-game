@@ -58,7 +58,13 @@ paths <<< libs-paths
 
 requirejs.config {
 	base-url: "#{cfg.static-dir}/js/build"
-	url-args: "?v=#{unless cfg.is-debug then cfg.revision else new Date!.getTime!}"
+	url-args: "
+		v=#{
+			unless cfg.is-debug
+			then cfg.revision
+			else new Date!.getTime!
+		}
+	"
 	shim
 	paths
 }
@@ -74,8 +80,4 @@ unless document.get-element-by-id \game
 
 (game) <-! require <[game]>
 
-{Game} = game
-
-# initialize game
-new Game do
-	$el: $ \#game
+game.initialize $ \#game

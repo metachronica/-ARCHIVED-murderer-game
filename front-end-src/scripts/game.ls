@@ -4,31 +4,18 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-(
-	$, B, loader-view, Str
-) <- define <[
-	jquery backbone views/loader Str
-]>
+(game-model, game-view) <- define <[models/game views/game]>
 
-{Model} = B
-{LoaderView} = loader-view
+{GameModel} = game-model
+{GameView}  = game-view
 
-class Game extends Model
-	
-	@at-start-selector = \.at-start
-	
-	initialize: (opts)->
-		super ...
-		
-		loader = new LoaderView do
-			game: @
-			cb: !~>
-				
-				# remove before js load text
-				$ @@at-start-selector, @get \$el .remove!
-				
-				loader.render!
-				
-				@get \$el .html loader.$el
+initialize = ($wrapper)!->
+	model = new GameModel
+	view  = new GameView {
+		model
+		cb: !->
+			view.render!
+			$wrapper.html view.$el
+	}
 
-{Game}
+{initialize}

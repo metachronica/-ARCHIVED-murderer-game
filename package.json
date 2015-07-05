@@ -4,7 +4,7 @@
   "description": "",
   "main": "",
   "scripts": {
-    "install": "./gulp requirejs prelude bower && ./gulp --min"
+    "install": "./gulp deploy && ./gulp --min"
   },
   "repository": {
     "type": "git",

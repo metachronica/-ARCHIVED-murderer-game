@@ -213,6 +213,10 @@ gulp.task('bower', ['clean-bower'], function (cb) {
 		.on('end', cb);
 });
 
+gulp.task('bower-watch', function () {
+	gulp.watch('bower.json', ['bower']);
+});
+
 
 // master clean tasks
 
@@ -238,7 +242,15 @@ gulp.task('watch', [
 	'server-watch',
 	'styles-watch',
 	'scripts-watch',
+	'bower-watch',
 ]);
+
+gulp.task('deploy', [
+	'requirejs',
+	'prelude',
+	'bower',
+]);
+
 gulp.task('default', [
 	'server',
 	'styles',

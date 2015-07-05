@@ -4,11 +4,7 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-(
-	$, B, loader-view
-) <- define <[
-	jquery backbone views/loader
-]>
+(B) <- define <[backbone]>
 
 {Model} = B
 

@@ -5,9 +5,9 @@
  */
 
 (
-	$, B, Snap, basic-view, templates
+	$, B, Snap, basic-view, templates, svg
 ) <- define <[
-	jquery backbone snap views/basic utils/templates
+	jquery backbone snap views/basic utils/templates utils/svg
 ]>
 
 {BasicView} = basic-view

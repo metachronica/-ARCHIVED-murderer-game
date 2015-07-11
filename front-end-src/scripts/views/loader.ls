@@ -5,9 +5,9 @@
  */
 
 (
-	$, B, Snap, basic-view, templates, svg
+	$, B, Snap, basic-view, templates, svg, p2cb
 ) <- define <[
-	jquery backbone snap views/basic utils/templates utils/svg
+	jquery backbone snap views/basic utils/templates utils/svg utils/p2cb
 ]>
 
 {BasicView} = basic-view
@@ -21,22 +21,10 @@ class LoaderView extends BasicView
 	initialize: (opts)!->
 		super ...
 		
-		cfg = $ \html .data \cfg
+		(err, el) <~! p2cb svg.get \loading-screen, \death, {space: 2}
+		throw err if err?
 		
-		(f) <~! Snap.load "#{cfg.static-dir}/images/loading-screen.svg"
-		
-		death-src = f.select \#death
-		
-		@death = Snap!
-		@death.append death-src
-		death-el = @death.select \#death
-		death-el-bbox = death-el.get-b-box!
-		
-		@death.attr do
-			width: death-el-bbox.width + 4
-			height: death-el-bbox.height + 4
-		
-		death-el.attr transform: "T-#{death-el-bbox.x-2},-#{death-el-bbox.y-2}"
+		@death = el
 		
 		opts.cb?!
 	

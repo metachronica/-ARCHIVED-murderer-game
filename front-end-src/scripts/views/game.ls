@@ -17,8 +17,6 @@ class GameView extends View
 	initialize: (opts)!->
 		super ...
 		
-		@init-cb
-		
 		@loader-view = new LoaderView do
 			game-model: @model
 			cb: opts.cb

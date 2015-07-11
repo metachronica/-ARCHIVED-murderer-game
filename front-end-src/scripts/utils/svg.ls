@@ -4,7 +4,7 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-($, snap, List) <- define <[jquery snap List]>
+($, Snap, List, p2cb) <- define <[jquery snap List utils/p2cb]>
 
 /**
  * @private
@@ -22,11 +22,11 @@ resources  = {}
 exceptions = {}
 
 /**
- * Get element from resource
+ * Load resource
  *
- * get(res-name :: string, el-id :: string) -> Promise
+ * load(res-name :: string) -> Promise
  */
-get = (res-name, el-id, {space=1})-->
+load = (res-name)->
 	
 	# already loaded
 	x = resources[res-name] ; return x if x?
@@ -47,25 +47,34 @@ get = (res-name, el-id, {space=1})-->
 				new exceptions.ResourceLoadError null, res-name, err-thrown
 	
 	resources[res-name] = defer
+
+/**
+ * Get element from resource
+ *
+ * get(res-name :: string, el-id :: string) -> Snap
+ */
+get = (res-name, el-id, {space=1}, cb)-->
 	
-	return defer.then (f)->
-		
-		el = f.select "##{el-id}"
-		throw new exceptions.ElementNotFound null, res-name, el-id unless el?
-		
-		clone = Snap!
-		clone.append el
-		target = clone.select "##{el-id}"
-		bbox = target.get-b-box!
-		
-		clone.attr <[ width height ]>.reduce ((attr, key)->
-			attr[key] = bbox[key] + (space*2)
-			attr
-		), {}
-		
-		target.attr transform: "T-#{bbox.x - space},-#{bbox.y - space}"
-		
-		clone
+	(err, f) <-! p2cb load res-name
+	return cb err if err?
+	
+	el = f.select "##{el-id}"
+	unless el?
+		return cb new exceptions.ElementNotFound null, res-name, el-id
+	
+	clone = Snap!
+	clone.append el
+	target = clone.select "##{el-id}"
+	bbox = target.get-b-box!
+	
+	clone.attr <[ width height ]>.reduce ((attr, key)->
+		attr[key] = bbox[key] + (space*2)
+		attr
+	), {}
+	
+	target.attr transform: "T-#{bbox.x - space},-#{bbox.y - space}"
+	
+	cb null, clone
 
 /**
  * Load all resources (useful for preloading)
@@ -76,12 +85,10 @@ get = (res-name, el-id, {space=1})-->
  * )
  *
  * load-all(every-cb :: Function) -> Promise
- *
- * FIXME correct get cb
  */
 load-all = (every-cb)->
 	
-	promises = resources-list.map get
+	promises = resources-list.map load
 	
 	staph        = no
 	loaded-count = 0
@@ -142,4 +149,4 @@ exceptions.ElementNotFound = class extends Error
 # exceptions names
 Object.keys exceptions .for-each !-> exceptions[it]::name = it
 
-{load-all, get, exceptions}
+{get, load, load-all, exceptions}

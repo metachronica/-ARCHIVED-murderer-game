@@ -5,9 +5,9 @@
  */
 
 (
-	$, B, Snap, basic-view, templates, svg, p2cb
+	$, B, Snap, basic-view, templates, svg
 ) <- define <[
-	jquery backbone snap views/basic utils/templates utils/svg utils/p2cb
+	jquery backbone snap views/basic utils/templates utils/svg
 ]>
 
 {BasicView} = basic-view
@@ -21,12 +21,20 @@ class LoaderView extends BasicView
 	initialize: (opts)!->
 		super ...
 		
-		(err, el) <~! p2cb svg.get \loading-screen, \death, {space: 2}
+		# FIXME prevent removing element from original document
+		(err, el) <~! svg.get \loading-screen, \death, {space: 2}
 		throw err if err?
 		
 		@death = el
 		
-		opts.cb?!
+		#svg.load \loading-screen .then (!->
+		#	console.log \kek
+		#	window.x = it.node.child-nodes.2
+		#), !->
+		#	console.error \fail, it
+		
+		if opts.cb?
+			opts.cb.bind null, null |> set-timeout _, 0
 	
 	render: !->
 		@$el.html @template @model

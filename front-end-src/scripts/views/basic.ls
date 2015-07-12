@@ -14,6 +14,11 @@ class BasicView extends View
 	
 	tag-name: \div
 	
+	get-region: (region-name)~>
+		@$el.find ".#{region-name}" .get 0
+	put-to-region: (region-name, el)!~~>
+		@get-region region-name |> el.append-to
+	
 	initialize: (opts)!->
 		super ...
 		@game-model = opts.game-model

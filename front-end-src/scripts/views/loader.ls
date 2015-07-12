@@ -21,22 +21,25 @@ class LoaderView extends BasicView
 	initialize: (opts)!->
 		super ...
 		
-		(err, el) <~! svg.get \loading-screen, \death, {space: 2}
+		(err, death) <~! svg.get \loading-screen, \death, {space: 2}
+		throw err if err?
+		(err, loader-bar) <~! svg.get \loading-screen, \loader-bar, {space: 2}
+		throw err if err?
+		(err, loading-text) <~! svg.get \loading-screen, \loading-text, {space: 2}
 		throw err if err?
 		
-		@death = el
-		
-		#svg.load \loading-screen .then (!->
-		#	console.log \kek
-		#	window.x = it.node.child-nodes.2
-		#), !->
-		#	console.error \fail, it
+		@load-text = loading-text
+		@death     = death
+		@bar       = loader-bar
 		
 		if opts.cb?
 			opts.cb.bind null, null |> set-timeout _, 0
 	
 	render: !->
 		@$el.html @template @model
-		@death.append-to <| @$el.find \.death .get 0
+		
+		@load-text |> @put-to-region \load-text
+		@death     |> @put-to-region \death
+		@bar       |> @put-to-region \progress-bar
 
 {LoaderView}

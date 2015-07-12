@@ -7,10 +7,24 @@
 .loader
 	display block
 	height 100%
-	
-	.load-text
-		font-size 32px
-		line-height 34px
+	position relative
 	
 	.death
-		display block
+	.progress-bar
+	.load-text
+		width 100%
+		text-align center
+		
+		svg
+			transform scale(1)
+	
+	.death
+		absolute left 0 top 5%
+	
+	.progress-bar
+		absolute left 0 bottom 5%
+	
+	.load-text
+		absolute left 0 bottom 14%
+		//font-size 32px
+		//line-height 34px

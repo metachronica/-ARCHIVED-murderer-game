@@ -1,3 +1,6 @@
 [submodule "stuff"]
 	path = stuff
 	url = https://github.com/metachronica/murderer-game-stuff
+[submodule "prelude-ls"]
+	path = prelude-ls
+	url = https://github.com/gkz/prelude-ls

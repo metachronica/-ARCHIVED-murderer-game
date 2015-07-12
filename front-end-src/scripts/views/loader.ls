@@ -21,7 +21,6 @@ class LoaderView extends BasicView
 	initialize: (opts)!->
 		super ...
 		
-		# FIXME prevent removing element from original document
 		(err, el) <~! svg.get \loading-screen, \death, {space: 2}
 		throw err if err?
 		

@@ -6,9 +6,10 @@
 
 ($, Snap, p2cb) <- define <[ jquery snap utils/p2cb ]>
 
+{pairs-to-obj, keys, Obj} = require \prelude-ls
+
 /**
- * @private
- * @type {[string]}
+ * resources-list :: [string]
  */
 const resources-list = <[
 	loading-screen
@@ -20,7 +21,7 @@ resources  = {}
 exceptions = {}
 
 /**
- * Load resource
+ * Load resource as text
  *
  * load(res-name :: string) -> Promise
  */
@@ -39,7 +40,7 @@ load = (res-name)->
 			method: \GET
 			data-type: \text
 		.then (data)!->
-			defer.resolve Snap.parse data
+			defer.resolve data
 		, (xhr, text-status, err-thrown)!->
 			defer.reject \
 				new exceptions.ResourceLoadError null, res-name, err-thrown
@@ -53,8 +54,10 @@ load = (res-name)->
  */
 get = (res-name, el-id, {space=1}, cb)-->
 	
-	(err, f) <-! p2cb load res-name
+	(err, data) <-! p2cb load res-name
 	return cb err if err?
+	
+	f = data |> Snap.parse
 	
 	el = f.select "##{el-id}"
 	unless el?
@@ -65,10 +68,12 @@ get = (res-name, el-id, {space=1}, cb)-->
 	target = clone.select "##{el-id}"
 	bbox = target.get-b-box!
 	
-	clone.attr <[ width height ]>.reduce ((attr, key)->
-		attr[key] = bbox[key] + (space*2)
-		attr
-	), {}
+	<[ width height ]>
+	|> ( .map -> [it, bbox[it]] )
+	|> pairs-to-obj
+	|> Obj.map (+ space * 2)
+	|> Obj.map Math.round
+	|> clone.attr
 	
 	target.attr transform: "T-#{bbox.x - space},-#{bbox.y - space}"
 	
@@ -92,12 +97,12 @@ load-all = (every-cb)->
 	loaded-count = 0
 	
 	promises.for-each (item)!->
-		item.then !->
-			return if staph
-			loaded-count += 1
-			every-cb loaded-count, promises.length
-		, !->
-			staph := yes
+		
+		(err) <-! p2cb item
+		return staph := yes if staph or err?
+		
+		loaded-count += 1
+		every-cb loaded-count, promises.length
 	
 	# wait for all promises
 	$.when.apply null, promises
@@ -145,6 +150,6 @@ exceptions.ElementNotFound = class extends Error
 			"
 
 # exceptions names
-Object.keys exceptions .for-each !-> exceptions[it]::name = it
+exceptions |> keys |> ( .for-each !-> exceptions[it]::name = it )
 
 {get, load, load-all, exceptions}

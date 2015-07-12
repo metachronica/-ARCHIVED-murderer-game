@@ -4,9 +4,10 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-($, Snap, p2cb) <- define <[ jquery snap utils/p2cb ]>
+($, Snap, cbtool) <- define <[ jquery snap utils/cbtool ]>
 
 {pairs-to-obj, keys, Obj} = require \prelude-ls
+{p2cb} = cbtool
 
 /**
  * resources-list :: [string]

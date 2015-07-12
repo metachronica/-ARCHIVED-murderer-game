@@ -19,4 +19,9 @@ cbcar = (car, cb)->
 	err  =  args |> head ; throw err if err?
 	args |> tail |> cb.apply null, _
 
-{cbok, cbcar}
+p2cb = (promise, cb) !->
+	promise
+	.then (!-> set-timeout (cb.bind null, null, it), 0)
+	.fail (!-> set-timeout (cb.bind null, it      ), 0)
+
+{cbok, cbcar, p2cb}

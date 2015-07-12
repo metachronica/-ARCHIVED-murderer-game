@@ -4,7 +4,7 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-($, Snap, List, p2cb) <- define <[jquery snap List utils/p2cb]>
+($, Snap, p2cb) <- define <[ jquery snap utils/p2cb ]>
 
 /**
  * @private
@@ -13,8 +13,6 @@
 const resources-list = <[
 	loading-screen
 ]>
-
-{map} = List
 
 const cfg = $ \html .data \cfg
 

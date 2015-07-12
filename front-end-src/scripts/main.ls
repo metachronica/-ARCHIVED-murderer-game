@@ -6,8 +6,13 @@
 
 <-! define
 
+{
+	pairs-to-obj
+	camelize
+	Obj
+} = require \prelude-ls
+
 html = document.get-elements-by-tag-name \html .0
-pairs-to-obj = (.reduce ((obj, it)-> obj[it.0] = it.1 ; obj), {})
 
 cfg =
 	<[
@@ -15,9 +20,9 @@ cfg =
 		revision
 		static-dir
 	]>
-	.map (-> [it, html.get-attribute "data-#{it}"])
-	.map (-> it.1 = it.1 is \true if it.0 is \is-debug ; it)
-	.map (-> it.0 .= replace /-\w/ig, (-> it.slice 1 .to-upper-case!) ; it)
+	|> ( .map -> [it, html.get-attribute "data-#{it}"]          )
+	|> ( .map -> it.1 = it.1 is \true if it.0 is \is-debug ; it )
+	|> ( .map -> it.0 |>= camelize ; it                         )
 	|> pairs-to-obj
 
 shim  = {}
@@ -34,27 +39,9 @@ libs-paths =
 		"backbone/backbone#{unless cfg.is-debug then '-min' else ''}"
 
 # add static directory prefix for libs paths
-libs-paths =
-	Object.keys libs-paths
-	.map (-> [it, libs-paths[it]])
-	.map (-> it.1 = "#{cfg.static-dir}/bower/#{it.1}" ; it)
-	|> pairs-to-obj
+libs-paths = libs-paths |> Obj.map (-> "#{cfg.static-dir}/bower/#{it}")
 
 paths <<< libs-paths
-
-# prelude-ls paths
-<[Func List Num Obj Str]>
-.map (-> [
-	it
-	"
-		#{cfg.static-dir}
-		/js/prelude/build/
-		#{it}
-		#{unless cfg.is-debug then '.min' else ''}
-	"
-])
-.reduce ((it, next)-> it[next.0] = next.1 ; it), {}
-|> (!-> paths <<< it)
 
 requirejs.config {
 	base-url: "#{cfg.static-dir}/js/build"
@@ -69,7 +56,7 @@ requirejs.config {
 	paths
 }
 
-($) <-! require <[jquery]>
+($) <-! requirejs <[ jquery ]>
 
 $ html .data \cfg, cfg
 
@@ -78,6 +65,6 @@ unless document.get-element-by-id \game
 
 <-! $ # dom ready
 
-(game) <-! require <[game]>
+(game) <-! requirejs <[ game ]>
 
 game.initialize $ \#game

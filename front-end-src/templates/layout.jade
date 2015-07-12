@@ -14,11 +14,13 @@ html(
 			href=staticFile('css/build/main.css')
 		)
 		if isDebug
+			script(src=staticFile("js/prelude.js"))
 			script(
 				src=staticFile("js/require.js")
 				data-main=staticFile("js/build/main.js")
 			)
 		else
+			script(src=staticFile("js/prelude-min.js"))
 			script(
 				src=staticFile("js/require.min.js")
 				data-main=staticFile("js/build/main.js")

@@ -4,7 +4,7 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-(B) <- define <[backbone]>
+(B) <- define <[ backbone ]>
 
 {Model} = B
 

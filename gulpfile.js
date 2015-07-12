@@ -164,39 +164,6 @@ gulp.task('requirejs', ['clean-requirejs'], function (cb) {
 });
 
 
-// prelude-ls
-
-gulp.task('clean-prelude', function (cb) {
-	del(['static/js/prelude/build'], cb);
-});
-
-gulp.task('prelude-amd', ['clean-prelude'], function (cb) {
-	
-	gulp.src('static/js/prelude/src/*.js')
-		.pipe(wrap([
-			"define(['module'], function (module) {",
-			'<%= contents %>',
-			'});',
-		].join('\n\n')))
-		.pipe(gulp.dest('static/js/prelude/build'))
-		.on('end', cb);
-});
-
-gulp.task('prelude-min', ['prelude-amd'], function (cb) {
-	
-	gulp.src([
-		'static/js/prelude/build/*.js',
-		'!static/js/prelude/build/*.min.js',
-	])
-		.pipe(uglify({ preserveComments: 'some' }))
-		.pipe(rename(function (f) { f.basename += '.min'; }))
-		.pipe(gulp.dest('static/js/prelude/build'))
-		.on('end', cb);
-});
-
-gulp.task('prelude', ['prelude-min']);
-
-
 // bower
 
 gulp.task('clean-bower', function (cb) {
@@ -230,7 +197,6 @@ gulp.task('clean', [
 gulp.task('distclean', [
 	'clean',
 	'clean-bower',
-	'clean-prelude',
 ], function (cb) {
 	del(['node_modules'], cb);
 });
@@ -247,7 +213,6 @@ gulp.task('watch', [
 
 gulp.task('deploy', [
 	'requirejs',
-	'prelude',
 	'bower',
 ]);
 

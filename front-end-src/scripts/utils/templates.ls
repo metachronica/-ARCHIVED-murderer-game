@@ -4,16 +4,20 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-($, U, Str) <- define <[jquery underscore Str]>
+($, U) <- define <[ jquery underscore ]>
 
-{dasherize, camelize} = Str
+{
+	dasherize
+	camelize
+	pairs-to-obj
+} = require \prelude-ls
 
 # templates list
 <[
 	loader
 ]>
-.reduce ((it, name)->
-	it[name |> camelize] =
-		U.template ($ ".#{name |> dasherize}-tpl" .html!)
-	it
-), {}
+|> (.map -> [
+	it |> camelize
+	U.template ($ ".#{it |> dasherize}-tpl" .html!)
+])
+|> pairs-to-obj

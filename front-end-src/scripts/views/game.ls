@@ -4,7 +4,7 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-(B, loader-view) <- define <[backbone views/loader]>
+(B, loader-view) <- define <[ backbone views/loader ]>
 
 {View} = B
 {LoaderView} = loader-view

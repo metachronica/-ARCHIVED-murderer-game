@@ -4,7 +4,7 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-(game-model, game-view) <- define <[models/game views/game]>
+(game-model, game-view) <- define <[ models/game views/game ]>
 
 {GameModel} = game-model
 {GameView}  = game-view

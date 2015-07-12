@@ -5,10 +5,16 @@
  */
 
 (
-	$, B, Snap, basic-view, templates, svg
+	$, B, Snap
+	basic-view
+	templates, svg, cbtool
 ) <- define <[
-	jquery backbone snap views/basic utils/templates utils/svg
+	jquery backbone snap
+	views/basic
+	utils/templates utils/svg utils/cbtool
 ]>
+
+{cbcar} = cbtool
 
 {BasicView} = basic-view
 
@@ -21,16 +27,17 @@ class LoaderView extends BasicView
 	initialize: (opts)!->
 		super ...
 		
-		(err, death) <~! svg.get \loading-screen, \death, {space: 2}
-		throw err if err?
-		(err, loader-bar) <~! svg.get \loading-screen, \loader-bar, {space: 2}
-		throw err if err?
-		(err, loading-text) <~! svg.get \loading-screen, \loading-text, {space: 2}
-		throw err if err?
+		res = svg.get \loading-screen
+		
+		( death        ) <~! cbcar res \death        , {space: 2}
+		( loader-bar   ) <~! cbcar res \loader-bar   , {space: 2}
+		( loading-text ) <~! cbcar res \loading-text , {space: 2}
 		
 		@load-text = loading-text
 		@death     = death
 		@bar       = loader-bar
+		
+		@progress  = @bar.select \#loader-front
 		
 		if opts.cb?
 			opts.cb.bind null, null |> set-timeout _, 0

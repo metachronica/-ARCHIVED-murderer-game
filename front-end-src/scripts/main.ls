@@ -37,6 +37,8 @@ libs-paths =
 		"underscore/underscore#{unless cfg.is-debug then '-min' else ''}"
 	backbone:
 		"backbone/backbone#{unless cfg.is-debug then '-min' else ''}"
+	async:
+		"async/#{unless cfg.is-debug then 'dist/async.min' else 'lib/async'}"
 
 # add static directory prefix for libs paths
 libs-paths = libs-paths |> Obj.map (-> "#{cfg.static-dir}/bower/#{it}")

@@ -5,16 +5,17 @@
  */
 
 (
-	$, B, Snap
+	$, B, Snap, async
 	basic-view
 	templates, svg, cbtool
 ) <- define <[
-	jquery backbone snap
+	jquery backbone snap async
 	views/basic
 	utils/templates utils/svg utils/cbtool
 ]>
 
 {cbcar} = cbtool
+{camelize, pairs-to-obj, Obj} = require \prelude-ls
 
 {BasicView} = basic-view
 
@@ -29,13 +30,18 @@ class LoaderView extends BasicView
 		
 		res = svg.get \loading-screen
 		
-		( death        ) <~! cbcar res \death        , {space: 2}
-		( loader-bar   ) <~! cbcar res \loader-bar   , {space: 2}
-		( loading-text ) <~! cbcar res \loading-text , {space: 2}
+		resources =
+			<[ death loader-bar loading-text ]>
+			|> ( .map -> [it |> camelize, res it, {space: 2}] )
+			|> pairs-to-obj
+			|> Obj.map (car)-> (cb)!-> car cb
 		
-		@load-text = loading-text
-		@death     = death
-		@bar       = loader-bar
+		par = (arr, cb)--> async.parallel arr, cb
+		(r) <~! cbcar par resources
+		
+		@load-text = r.loading-text
+		@death     = r.death
+		@bar       = r.loader-bar
 		
 		@progress  = @bar.select \#loader-front
 		

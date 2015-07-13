@@ -5,12 +5,13 @@
  */
 
 (
-	$, basic-view, templates
+	$, basic-view, templates, cbtool
 ) <- define <[
-	jquery views/basic utils/templates
+	jquery views/basic utils/templates utils/cbtool
 ]>
 
 {BasicView} = basic-view
+{cbcar} = cbtool
 
 class LoaderView extends BasicView
 	
@@ -27,7 +28,7 @@ class LoaderView extends BasicView
 	initialize: (opts)!->
 		super ...
 		
-		<~! @load-svg-resources
+		<~! cbcar @load-svg-resources
 		
 		@load-text = @svg.loading-screen.loading-text
 		@death     = @svg.loading-screen.death

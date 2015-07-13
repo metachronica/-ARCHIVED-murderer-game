@@ -5,17 +5,10 @@
  */
 
 (
-	$, B, Snap, async
-	basic-view
-	templates, svg, cbtool
+	$, basic-view, templates
 ) <- define <[
-	jquery backbone snap async
-	views/basic
-	utils/templates utils/svg utils/cbtool
+	jquery views/basic utils/templates
 ]>
-
-{cbcar} = cbtool
-{camelize, pairs-to-obj, Obj} = require \prelude-ls
 
 {BasicView} = basic-view
 
@@ -25,28 +18,24 @@ class LoaderView extends BasicView
 	
 	template: templates.loader
 	
+	svg-resources:
+		loading-screen:
+			death: {space: 2}
+			loader-bar: {space: 2}
+			loading-text: {space: 2}
+	
 	initialize: (opts)!->
 		super ...
 		
-		res = svg.get \loading-screen
+		<~! @load-svg-resources
 		
-		resources =
-			<[ death loader-bar loading-text ]>
-			|> ( .map -> [it |> camelize, res it, {space: 2}] )
-			|> pairs-to-obj
-			|> Obj.map (car)-> (cb)!-> car cb
-		
-		par = (arr, cb)--> async.parallel arr, cb
-		(r) <~! cbcar par resources
-		
-		@load-text = r.loading-text
-		@death     = r.death
-		@bar       = r.loader-bar
+		@load-text = @svg.loading-screen.loading-text
+		@death     = @svg.loading-screen.death
+		@bar       = @svg.loading-screen.loader-bar
 		
 		@progress  = @bar.select \#loader-front
 		
-		if opts.cb?
-			opts.cb.bind null, null |> set-timeout _, 0
+		(opts.cb.bind null, null |> set-timeout _, 0) if opts.cb?
 	
 	render: !->
 		@$el.html @template @model

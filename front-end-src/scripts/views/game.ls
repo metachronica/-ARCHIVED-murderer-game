@@ -21,8 +21,12 @@ class GameView extends View
 			game-model: @model
 			cb: opts.cb
 	
-	render: !->
+	render: ->
+		super ...
+		
 		@loader-view.render!
 		@$el .html @loader-view.$el
+		
+		this
 
 {GameView}

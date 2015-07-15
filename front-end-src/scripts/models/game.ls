@@ -7,7 +7,11 @@
 (B) <- define <[ backbone ]>
 
 {Model} = B
+{obj-to-pairs} = require \prelude-ls
 
 class GameModel extends Model
+	defaults:
+		\source-height : 1080
+		\ratio : [16, 9]
 
 {GameModel}

@@ -10,9 +10,16 @@
 	pairs-to-obj
 	camelize
 	Obj
+	map
+	any
 } = require \prelude-ls
 
 html = document.get-elements-by-tag-name \html .0
+
+is-bool-field = (name)->
+	<[ is has ]> # prefixes
+	|> map (-> "#{it}-")
+	|> any (-> (name.index-of it) is 0)
 
 cfg =
 	<[
@@ -20,9 +27,9 @@ cfg =
 		revision
 		static-dir
 	]>
-	|> ( .map -> [it, html.get-attribute "data-#{it}"]          )
-	|> ( .map -> it.1 = it.1 is \true if it.0 is \is-debug ; it )
-	|> ( .map -> it.0 |>= camelize ; it                         )
+	|> map (-> [it, html.get-attribute "data-#{it}"]              )
+	|> map (-> it.1 = it.1 is \true if it.0 |> is-bool-field ; it )
+	|> map (-> it.0 |>= camelize ; it                             )
 	|> pairs-to-obj
 
 shim  = {}

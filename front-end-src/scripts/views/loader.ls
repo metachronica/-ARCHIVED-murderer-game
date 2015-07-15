@@ -38,11 +38,15 @@ class LoaderView extends BasicView
 		
 		(opts.cb.bind null, null |> set-timeout _, 0) if opts.cb?
 	
-	render: !->
+	render: ->
+		super ...
+		
 		@$el.html @template @model
 		
 		@load-text |> @put-to-region \load-text
 		@death     |> @put-to-region \death
 		@bar       |> @put-to-region \progress-bar
+		
+		this
 
 {LoaderView}

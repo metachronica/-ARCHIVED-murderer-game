@@ -8,7 +8,14 @@
 
 (B, async, svg) <- define <[ backbone async utils/svg ]>
 
-{obj-to-pairs, pairs-to-obj, dasherize, Obj} = require \prelude-ls
+{
+	obj-to-pairs
+	pairs-to-obj
+	dasherize
+	camelize
+	Obj
+	map
+} = require \prelude-ls
 
 {View} = B
 
@@ -42,5 +49,22 @@ class BasicView extends View
 		super ...
 		@game-model = opts.game-model
 		@svg = {}
+		$ window .on \resize, @on-window-resize
+	
+	remove: !->
+		super ...
+		$ window .off \resize, @on-window-resize
+	
+	render: ->
+		super ...
+		@on-window-resize!
+		this
+	
+	on-window-resize: !~>
+		const v =
+			<[ ratio source-height ]>
+			|> map (~> [it |> camelize, @game-model.get it])
+			|> pairs-to-obj
+		@trigger \resize-area
 
 {BasicView}

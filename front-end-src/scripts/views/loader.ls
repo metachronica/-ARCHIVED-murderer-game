@@ -30,7 +30,11 @@ class LoaderView extends BasicView
 		
 		<~! cbcar @load-svg-resources
 		
-		@load-text = @svg.loading-screen.loading-text
+		# as non-svg text
+		# (because font can't be not loaded yet
+		# and we can have wrong svg size)
+		@load-text = $ '<h1>Loading…</h1>'
+		
 		@death     = @svg.loading-screen.death
 		@bar       = @svg.loading-screen.loader-bar
 		

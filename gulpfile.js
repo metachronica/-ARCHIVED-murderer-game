@@ -10,7 +10,6 @@ var
 	gutil      = require('gulp-util'),
 	sourcemaps = require('gulp-sourcemaps'),
 	rename     = require('gulp-rename'),
-	path       = require('path'),
 	stylus     = require('gulp-stylus'),
 	uglify     = require('gulp-uglify'),
 	argv       = require('yargs').argv,
@@ -18,6 +17,11 @@ var
 	nib        = require('nib'),
 	spawnSync  = require('child_process').spawnSync,
 	wrap       = require('gulp-wrap'),
+	browSync   = require('browser-sync'),
+	browReload = browSync.reload,
+	yamlLoad   = require('js-yaml').safeLoad,
+	path       = require('path'),
+	fs         = require('fs'),
 	
 	plumberOpts = {
 		errorHanlder: function (err) {
@@ -90,6 +94,28 @@ gulp.task('server', ['clean-server'], serverTask.bind(null, false));
 gulp.task('server-watch', ['clean-server'], serverTask.bind(null, true));
 
 
+// browser sync for front-end
+
+// if we got flag --brow-sync
+if (argv.browSync) {
+	
+	var
+		cfgFile = path.resolve(process.cwd(), 'config.yaml'),
+		cfg     = yamlLoad(fs.readFileSync(cfgFile, 'utf-8')),
+		cfgPort = parseInt(cfg.SERVER.PORT, 10),
+		cfgHost = cfg.SERVER.HOST;
+	
+	gutil.log(
+		'Starting browser-sync server at '
+		+ c.yellow('http://') + c.blue(cfgHost)
+		+ c.yellow(':') + c.blue(cfgPort + 1)
+	);
+	browSync({
+		port  : cfgPort + 1,
+		proxy : 'http://'+ cfgHost +':'+ cfgPort,
+	});
+}
+
 // front-end styles
 
 gulp.task('clean-styles', function (cb) {
@@ -115,6 +141,7 @@ gulp.task('styles', ['clean-styles'], function (cb) {
 		.pipe( ! argv.min ? sourcemaps.write() : gutil.noop())
 		.pipe(buildFinish('styles'))
 		.pipe(gulp.dest('static/css/build'))
+		.pipe(argv.browSync ? browReload({ stream: true }) : gutil.noop())
 		.on('finish', cb);
 });
 
@@ -141,6 +168,7 @@ function scriptsTask(isWatcher, cb) {
 		.pipe( ! argv.min ? sourcemaps.write() : gutil.noop())
 		.pipe(buildFinish('scripts'))
 		.pipe(gulp.dest('static/js/build'))
+		.pipe(argv.browSync ? browReload({ stream: true }) : gutil.noop())
 		.on('finish', cb);
 }
 

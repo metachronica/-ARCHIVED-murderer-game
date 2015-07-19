@@ -31,4 +31,10 @@ router.init app
 {PORT, HOST} = config.SERVER
 
 app.listen PORT, HOST, !->
-	console.log "Listening on #{c.blue HOST}:#{c.blue PORT}"
+	console.log "
+		Listening on
+		\ #{c.yellow \http://}
+		#{c.blue HOST}
+		#{c.yellow \:}
+		#{c.blue PORT}
+	"

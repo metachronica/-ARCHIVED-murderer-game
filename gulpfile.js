@@ -79,8 +79,8 @@ gulp.task('clean-server', function (cb) {
 function serverTask(isWatcher, cb) {
 	
 	gulp.src('server/src/**/*.ls')
-		.pipe(isWatcher ? watch('server/src/**/*.ls') : gutil.noop())
 		.pipe(plumber(plumberOpts))
+		.pipe(isWatcher ? watch('server/src/**/*.ls') : gutil.noop())
 		.pipe(buildStart('server'))
 		.pipe(sourcemaps.init())
 		.pipe(livescript({ bare: true }))
@@ -159,8 +159,8 @@ gulp.task('clean-scripts', function (cb) {
 function scriptsTask(isWatcher, cb) {
 	
 	gulp.src('front-end-src/scripts/**/*.ls')
-		.pipe(isWatcher ? watch('front-end-src/scripts/**/*.ls') : gutil.noop())
 		.pipe(plumber(plumberOpts))
+		.pipe(isWatcher ? watch('front-end-src/scripts/**/*.ls') : gutil.noop())
 		.pipe(buildStart('scripts'))
 		.pipe( ! argv.min ? sourcemaps.init() : gutil.noop())
 		.pipe(livescript({ bare: true }))

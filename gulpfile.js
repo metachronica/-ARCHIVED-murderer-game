@@ -15,20 +15,185 @@ var
 	argv       = require('yargs').argv,
 	bower      = require('gulp-bower'),
 	nib        = require('nib'),
+	Stream     = require('stream'),
 	spawnSync  = require('child_process').spawnSync,
 	wrap       = require('gulp-wrap'),
 	browSync   = require('browser-sync'),
 	browReload = browSync.reload,
 	yamlLoad   = require('js-yaml').safeLoad,
 	path       = require('path'),
-	fs         = require('fs'),
+	fs         = require('fs');
+
+var plumberOpts = {
+	errorHanlder: function (err) {
+		console.error(c.red('Error:'), err.stack || err);
+		this.emit('end');
+	}
+};
+
+function getNewTransformator(transformCb) {
+	var stream = new Stream.Transform({ objectMode: true });
+	stream._transform = transformCb;
+	return stream;
+}
+
+function getFileNameWithoutExt(filepath) {
+	var
+		dirname  = path.dirname(filepath),
+		extname  = path.extname(filepath),
+		basename = path.basename(filepath, extname);
+	return path.join(dirname, basename);
+}
+
+// build queue (hardcode for prevent build stuck)
+
+var buildQ = {};
+
+function qPre(logName) {
 	
-	plumberOpts = {
-		errorHanlder: function (err) {
-			console.error(c.red('Error:'), err.stack || err);
-			this.emit('end');
+	if ( ! buildQ[logName]) {
+		buildQ[logName] = [];
+	}
+}
+
+/**
+ * we can have only 2 tasks in queue
+ * 1 - for current building
+ * 2 - for building after current
+ *
+ * @param {string} logName
+ * @param {string} filePath
+ * @private
+ * @returns {number}
+ */
+function qCnt(logName, id) {
+	
+	qPre(logName);
+	
+	return buildQ[logName].reduce(function (count, next) {
+		return next.id === id ? ++count : count;
+	}, 0);
+}
+
+function qAdd(logName) {
+	
+	qPre(logName);
+	var getCount = qCnt.bind(null, logName);
+	
+	return getNewTransformator(function (file, unused, cb) {
+		
+		var id = getFileNameWithoutExt(file.relative);
+		
+		var map = {
+			0: function () {
+				// queue is completely empty for this file
+				// continue building immidiately
+				gutil.log(
+					c.blue(logName + ': start queue task immidiately for file'),
+					id
+				);
+				buildQ[logName].push({
+					id : id,
+					fd : file,
+					cb : null,
+				});
+				cb(null, file);
+			},
+			//1: function () {
+			//	// queue can get only more 1 task to queue
+			//	// for delayed file building
+			//	gutil.log(
+			//		c.yellow(logName + ': building is delayed for file'),
+			//		id
+			//	);
+			//	buildQ[logName].push({
+			//		id : id,
+			//		fd : file,
+			//		cb : cb,
+			//	});
+			//},
+			otherwise: function () {
+				// queue is full
+				// just skip and wait for delayer file building
+				// that already in queue
+				cb(new Error("File '"+ id +"' is already in building queue"));
+			}
+		}, f = map[ getCount(id) ];
+		f ? f() : map.otherwise();
+	});
+}
+
+function qEnd(logName) {
+	
+	qPre(logName);
+	
+	return getNewTransformator(function (file, unused, cb) {
+		
+		var
+			id = getFileNameWithoutExt(file.relative),
+			found = null;
+		
+		function find(item, i) {
+			return item.id === id ? (found = i, true) : false;
 		}
-	};
+		
+		buildQ[logName].some(find);
+		if (found === null) {
+			return cb(new Error('Unexpected shit!'));
+		}
+		
+		buildQ[logName].splice(found, 1);
+		gutil.log(
+			c.green(logName + ': queue building is complete for file'),
+			id
+		);
+		
+		found = null;
+		buildQ[logName].some(find);
+		if (found !== null) {
+			gutil.log(
+				c.yellow(logName + ': continue delayed building for file'),
+				buildQ[logName][found].id
+			);
+			(function (params) {
+				process.nextTick(function () {
+					params.cb(null, params.fd);
+				});
+			})(['cb', 'fd'].reduce(function (obj, key) {
+				obj[key] = buildQ[logName][found][key];
+				if (key === 'cb') {
+					buildQ[logName][found][key] = null;
+				}
+				return obj;
+			}, {}));
+		}
+		
+		cb(null, file);
+	});
+}
+
+function qClr(logName) {
+	
+	qPre(logName);
+	
+	gutil.log(
+		c.red(logName + ' canceling delayed files to build because of error')
+	);
+	
+	buildQ[logName].forEach(function (item) {
+		if (item.cb) {
+			gutil.log(
+				c.red(logName + ' canceling delayed building for file'),
+				item.id
+			);
+			item.cb(new Error('Canceled because of error'));
+		}
+	});
+	
+	buildQ[logName] = [];
+}
+
+// build helpers
 
 function buildStart(logName) {
 	
@@ -78,15 +243,26 @@ gulp.task('clean-server', function (cb) {
 
 function serverTask(isWatcher, cb) {
 	
+	var logName = 'server';
+	
 	gulp.src('server/src/**/*.ls')
-		.pipe(plumber(plumberOpts))
+		.pipe(plumber({
+			errorHanlder: function (err) {
+				console.error(
+					c.red('Error "'+ logName +'":'),
+					err.stack || err
+				);
+				qClr(logName);
+				this.emit('end');
+			}
+		}))
 		.pipe(isWatcher ? watch('server/src/**/*.ls') : gutil.noop())
-		.pipe(buildStart('server'))
+		.pipe(qAdd(logName))
 		.pipe(sourcemaps.init())
 		.pipe(livescript({ bare: true }))
 		.pipe(sourcemaps.write())
-		.pipe(buildFinish('server'))
 		.pipe(gulp.dest('server/build'))
+		.pipe(qEnd(logName))
 		.on('finish', cb);
 }
 
@@ -129,8 +305,8 @@ gulp.task('styles', ['clean-styles'], function (cb) {
 		.pipe(buildStart('styles'))
 		.pipe( ! argv.min ? sourcemaps.init() : gutil.noop())
 		.pipe(stylus({
-			compress : !!argv.min,
-			use      : [
+			compress: argv.min ? true : false,
+			use: [
 				nib(),
 				function (style) {
 					style.define('REVISION', REVISION);
@@ -158,16 +334,28 @@ gulp.task('clean-scripts', function (cb) {
 
 function scriptsTask(isWatcher, cb) {
 	
+	var logName = 'scripts';
+	
 	gulp.src('front-end-src/scripts/**/*.ls')
-		.pipe(plumber(plumberOpts))
+		.pipe(plumber({
+			errorHanlder: function (err) {
+				console.error(
+					c.red('Error "'+ logName +'":'),
+					err.stack || err
+				);
+				qClr(logName);
+				this.emit('end');
+				return true;
+			}
+		}))
 		.pipe(isWatcher ? watch('front-end-src/scripts/**/*.ls') : gutil.noop())
-		.pipe(buildStart('scripts'))
+		.pipe(qAdd(logName))
 		.pipe( ! argv.min ? sourcemaps.init() : gutil.noop())
 		.pipe(livescript({ bare: true }))
 		.pipe(argv.min ? uglify({ preserveComments: 'some' }) : gutil.noop())
 		.pipe( ! argv.min ? sourcemaps.write() : gutil.noop())
-		.pipe(buildFinish('scripts'))
 		.pipe(gulp.dest('static/js/build'))
+		.pipe(qEnd(logName))
 		.pipe(argv.browSync ? browReload({ stream: true }) : gutil.noop())
 		.on('finish', cb);
 }

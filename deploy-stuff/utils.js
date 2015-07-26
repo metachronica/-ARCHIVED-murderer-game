@@ -74,15 +74,12 @@ var itemErrorHandler =
 module.exports.itemErrorHandler =
 function (logName, file, err) {
 	
-	gutil.log.apply(
-		null,
-		[ c.yellow(logName) ]
-			.concat( file ? [getFileNameWithoutExt(file.relative)] : [])
-			.concat([
-				sep,
-				c.red('Error:'),
-				err.stack || err
-			])
+	gutil.log(
+		c.yellow(logName),
+		c.blue( getFileNameWithoutExt(file.relative) ),
+		sep,
+		c.red('Error:'),
+		err.stack || err
 	);
 	
 	// trigger of buildFinish with fail mode

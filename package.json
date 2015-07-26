@@ -24,7 +24,6 @@
     "gulp": "^3.9.0",
     "gulp-bower": "0.0.10",
     "gulp-livescript": "^2.4.0",
-    "gulp-plumber": "^1.0.1",
     "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^1.5.2",
     "gulp-stylus": "^2.0.5",

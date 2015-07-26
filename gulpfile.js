@@ -1,238 +1,37 @@
 'use strict';
 
 var
-	c          = require('colors/safe'),
-	gulp       = require('gulp'),
-	del        = require('del'),
-	livescript = require('gulp-livescript'),
-	watch      = require('gulp-watch'),
-	plumber    = require('gulp-plumber'),
-	gutil      = require('gulp-util'),
-	sourcemaps = require('gulp-sourcemaps'),
-	rename     = require('gulp-rename'),
-	stylus     = require('gulp-stylus'),
-	uglify     = require('gulp-uglify'),
-	argv       = require('yargs').argv,
-	bower      = require('gulp-bower'),
-	nib        = require('nib'),
-	Stream     = require('stream'),
-	spawnSync  = require('child_process').spawnSync,
-	wrap       = require('gulp-wrap'),
-	browSync   = require('browser-sync'),
-	browReload = browSync.reload,
-	yamlLoad   = require('js-yaml').safeLoad,
-	path       = require('path'),
-	fs         = require('fs');
+	c           = require('colors/safe'),
+	gulp        = require('gulp'),
+	watch       = require('gulp-watch'),
+	gutil       = require('gulp-util'),
+	PluginError = gutil.PluginError,
+	rename      = require('gulp-rename'),
+	stylus      = require('gulp-stylus'),
+	argv        = require('yargs').argv,
+	bower       = require('gulp-bower'),
+	nib         = require('nib'),
+	browSync    = require('browser-sync'),
+	browReload  = browSync.reload,
+	yamlLoad    = require('js-yaml').safeLoad,
+	path        = require('path'),
+	fs          = require('fs'),
+	glivescript = require('gulp-livescript'),
+	uglify      = require('gulp-uglify'),
+	sourcemaps  = require('gulp-sourcemaps'),
+	vfsFake     = require('vinyl-fs-fake'),
+	through2    = require('through2'),
+	
+	utils       = require('./deploy-stuff/utils');
 
-var plumberOpts = {
-	errorHanlder: function (err) {
-		console.error(c.red('Error:'), err.stack || err);
-		this.emit('end');
-	}
-};
-
-function getNewTransformator(transformCb) {
-	var stream = new Stream.Transform({ objectMode: true });
-	stream._transform = transformCb;
-	return stream;
-}
-
-function getFileNameWithoutExt(filepath) {
-	var
-		dirname  = path.dirname(filepath),
-		extname  = path.extname(filepath),
-		basename = path.basename(filepath, extname);
-	return path.join(dirname, basename);
-}
-
-// build queue (hardcode for prevent build stuck)
-
-var buildQ = {};
-
-function qPre(logName) {
-	
-	if ( ! buildQ[logName]) {
-		buildQ[logName] = [];
-	}
-}
-
-/**
- * we can have only 2 tasks in queue
- * 1 - for current building
- * 2 - for building after current
- *
- * @param {string} logName
- * @param {string} filePath
- * @private
- * @returns {number}
- */
-function qCnt(logName, id) {
-	
-	qPre(logName);
-	
-	return buildQ[logName].reduce(function (count, next) {
-		return next.id === id ? ++count : count;
-	}, 0);
-}
-
-function qAdd(logName) {
-	
-	qPre(logName);
-	var getCount = qCnt.bind(null, logName);
-	
-	return getNewTransformator(function (file, unused, cb) {
-		
-		var id = getFileNameWithoutExt(file.relative);
-		
-		var map = {
-			0: function () {
-				// queue is completely empty for this file
-				// continue building immidiately
-				gutil.log(
-					c.blue(logName + ': start queue task immidiately for file'),
-					id
-				);
-				buildQ[logName].push({
-					id : id,
-					fd : file,
-					cb : null,
-				});
-				cb(null, file);
-			},
-			//1: function () {
-			//	// queue can get only more 1 task to queue
-			//	// for delayed file building
-			//	gutil.log(
-			//		c.yellow(logName + ': building is delayed for file'),
-			//		id
-			//	);
-			//	buildQ[logName].push({
-			//		id : id,
-			//		fd : file,
-			//		cb : cb,
-			//	});
-			//},
-			otherwise: function () {
-				// queue is full
-				// just skip and wait for delayer file building
-				// that already in queue
-				cb(new Error("File '"+ id +"' is already in building queue"));
-			}
-		}, f = map[ getCount(id) ];
-		f ? f() : map.otherwise();
-	});
-}
-
-function qEnd(logName) {
-	
-	qPre(logName);
-	
-	return getNewTransformator(function (file, unused, cb) {
-		
-		var
-			id = getFileNameWithoutExt(file.relative),
-			found = null;
-		
-		function find(item, i) {
-			return item.id === id ? (found = i, true) : false;
-		}
-		
-		buildQ[logName].some(find);
-		if (found === null) {
-			return cb(new Error('Unexpected shit!'));
-		}
-		
-		buildQ[logName].splice(found, 1);
-		gutil.log(
-			c.green(logName + ': queue building is complete for file'),
-			id
-		);
-		
-		found = null;
-		buildQ[logName].some(find);
-		if (found !== null) {
-			gutil.log(
-				c.yellow(logName + ': continue delayed building for file'),
-				buildQ[logName][found].id
-			);
-			(function (params) {
-				process.nextTick(function () {
-					params.cb(null, params.fd);
-				});
-			})(['cb', 'fd'].reduce(function (obj, key) {
-				obj[key] = buildQ[logName][found][key];
-				if (key === 'cb') {
-					buildQ[logName][found][key] = null;
-				}
-				return obj;
-			}, {}));
-		}
-		
-		cb(null, file);
-	});
-}
-
-function qClr(logName) {
-	
-	qPre(logName);
-	
-	gutil.log(
-		c.red(logName + ' canceling delayed files to build because of error')
-	);
-	
-	buildQ[logName].forEach(function (item) {
-		if (item.cb) {
-			gutil.log(
-				c.red(logName + ' canceling delayed building for file'),
-				item.id
-			);
-			item.cb(new Error('Canceled because of error'));
-		}
-	});
-	
-	buildQ[logName] = [];
-}
-
-// build helpers
-
-function buildStart(logName) {
-	
-	if ( ! argv.buildLog) return gutil.noop();
-	
-	return rename(function (f) {
-		gutil.log(
-			c.blue(logName + ': building file'),
-			path.join(f.dirname, f.basename + f.extname)
-		);
-	});
-}
-
-function buildFinish(logName) {
-	
-	if ( ! argv.buildLog) return gutil.noop();
-	
-	return rename(function (f) {
-		gutil.log(
-			c.green(logName + ': file is builded'),
-			path.join(f.dirname, f.basename + f.extname)
-		);
-	});
-}
-
-var REVISION = (function () {
-	
-	var res = spawnSync('git', ['rev-parse', 'HEAD']);
-	
-	if (
-		res.status !== 0
-		|| ! res.stdout
-		|| res.stdout.toString().length <= 0
-	) {
-		throw new Error('Cannot get head git commit id')
-	}
-	
-	return res.stdout.toString().replace(/\s/g, '');
-})();
+var
+	getFileNameWithoutExt = utils.getFileNameWithoutExt,
+	watcherErrorHandler   = utils.watcherErrorHandler,
+	itemErrorHandler      = utils.itemErrorHandler,
+	buildStart            = utils.buildStart,
+	buildFinish           = utils.buildFinish,
+	REVISION              = utils.REVISION,
+	del                   = utils.del;
 
 
 // back-end livescript
@@ -241,39 +40,46 @@ gulp.task('clean-server', function (cb) {
 	del(['server/build'], cb);
 });
 
-function serverTask(isWatcher, cb) {
+function serverItemHandler(logName, file, enc, cb) {
 	
-	var logName = 'server';
-	
-	gulp.src('server/src/**/*.ls')
-		.pipe(plumber({
-			errorHanlder: function (err) {
-				console.error(
-					c.red('Error "'+ logName +'":'),
-					err.stack || err
-				);
-				qClr(logName);
-				this.emit('end');
-			}
-		}))
-		.pipe(isWatcher ? watch('server/src/**/*.ls') : gutil.noop())
-		.pipe(qAdd(logName))
+	vfsFake.src([ file ])
+		.pipe(buildStart(logName))
 		.pipe(sourcemaps.init())
-		.pipe(livescript({ bare: true }))
+		.pipe(glivescript({
+			bare   : true,
+			header : true,
+			const  : false,
+		}))
+		.on('error', function (err) {
+			itemErrorHandler.call(this, logName, file, err);
+		})
 		.pipe(sourcemaps.write())
 		.pipe(gulp.dest('server/build'))
-		.pipe(qEnd(logName))
+		.pipe(buildFinish(logName))
 		.on('finish', cb);
 }
 
-gulp.task('server', ['clean-server'], serverTask.bind(null, false));
-gulp.task('server-watch', ['clean-server'], serverTask.bind(null, true));
+function serverTask(logName, isWatcher, cb) {
+	
+	gulp.src('server/src/**/*.ls')
+		.pipe(isWatcher ? watch('server/src/**/*.ls') : gutil.noop())
+		.on('error', function (err) {
+			watcherErrorHandler.call(this, logName, err);
+		})
+		.pipe(through2.obj(function (file, enc, cb) {
+			serverItemHandler.call(this, logName, file, enc, cb);
+		}))
+		.on('finish', cb);
+}
+
+gulp.task('server', ['clean-server'], serverTask.bind(null, 'server', false));
+gulp.task('server-watch', ['clean-server'], serverTask.bind(null, 'server', true));
 
 
 // browser sync for front-end
 
-// if we got flag --brow-sync
-if (argv.browSync) {
+// if we got flag --browser-sync
+if (argv.browserSync) {
 	
 	var
 		cfgFile = path.resolve(process.cwd(), 'config.yaml'),
@@ -292,17 +98,17 @@ if (argv.browSync) {
 	});
 }
 
+
 // front-end styles
 
 gulp.task('clean-styles', function (cb) {
 	del(['static/css/build'], cb);
 });
 
-gulp.task('styles', ['clean-styles'], function (cb) {
+function stylesItemHandler(logName, file, enc, cb) {
 	
-	gulp.src('front-end-src/styles/main.styl')
-		.pipe(plumber(plumberOpts))
-		.pipe(buildStart('styles'))
+	vfsFake.src([ file ])
+		.pipe(buildStart(logName))
 		.pipe( ! argv.min ? sourcemaps.init() : gutil.noop())
 		.pipe(stylus({
 			compress: argv.min ? true : false,
@@ -314,10 +120,22 @@ gulp.task('styles', ['clean-styles'], function (cb) {
 				},
 			],
 		}))
+		.on('error', function (err) {
+			itemErrorHandler.call(this, logName, file, err);
+		})
 		.pipe( ! argv.min ? sourcemaps.write() : gutil.noop())
-		.pipe(buildFinish('styles'))
 		.pipe(gulp.dest('static/css/build'))
-		.pipe(argv.browSync ? browReload({ stream: true }) : gutil.noop())
+		.pipe(argv.browserSync ? browReload({ stream: true }) : gutil.noop())
+		.pipe(buildFinish(logName))
+		.on('finish', cb);
+}
+
+gulp.task('styles', ['clean-styles'], function (cb) {
+	
+	gulp.src('front-end-src/styles/main.styl')
+		.pipe(through2.obj(function (file, enc, cb) {
+			stylesItemHandler.call(this, 'styles', file, enc, cb);
+		}))
 		.on('finish', cb);
 });
 
@@ -332,36 +150,42 @@ gulp.task('clean-scripts', function (cb) {
 	del(['static/js/build'], cb);
 });
 
-function scriptsTask(isWatcher, cb) {
+function scriptsItemHandler(logName, file, enc, cb) {
 	
-	var logName = 'scripts';
-	
-	gulp.src('front-end-src/scripts/**/*.ls')
-		.pipe(plumber({
-			errorHanlder: function (err) {
-				console.error(
-					c.red('Error "'+ logName +'":'),
-					err.stack || err
-				);
-				qClr(logName);
-				this.emit('end');
-				return true;
-			}
-		}))
-		.pipe(isWatcher ? watch('front-end-src/scripts/**/*.ls') : gutil.noop())
-		.pipe(qAdd(logName))
+	vfsFake.src([ file ])
+		.pipe(buildStart(logName))
 		.pipe( ! argv.min ? sourcemaps.init() : gutil.noop())
-		.pipe(livescript({ bare: true }))
+		.pipe(glivescript({
+			bare   : true,
+			header : true,
+			const  : false,
+		}))
+		.on('error', function (err) {
+			itemErrorHandler.call(this, logName, file, err);
+		})
 		.pipe(argv.min ? uglify({ preserveComments: 'some' }) : gutil.noop())
 		.pipe( ! argv.min ? sourcemaps.write() : gutil.noop())
 		.pipe(gulp.dest('static/js/build'))
-		.pipe(qEnd(logName))
-		.pipe(argv.browSync ? browReload({ stream: true }) : gutil.noop())
+		.pipe(argv.browserSync ? browReload({ stream: true }) : gutil.noop())
+		.pipe(buildFinish(logName))
 		.on('finish', cb);
 }
 
-gulp.task('scripts', ['clean-scripts'], scriptsTask.bind(null, false));
-gulp.task('scripts-watch', ['clean-scripts'], scriptsTask.bind(null, true));
+function scriptsTask(logName, isWatcher, cb) {
+	
+	gulp.src('front-end-src/scripts/**/*.ls')
+		.pipe(isWatcher ? watch('front-end-src/scripts/**/*.ls') : gutil.noop())
+		.on('error', function (err) {
+			watcherErrorHandler.call(this, logName, err);
+		})
+		.pipe(through2.obj(function (file, enc, cb) {
+			scriptsItemHandler.call(this, logName, file, enc, cb);
+		}))
+		.on('finish', cb);
+}
+
+gulp.task('scripts', ['clean-scripts'], scriptsTask.bind(null, 'scripts', false));
+gulp.task('scripts-watch', ['clean-scripts'], scriptsTask.bind(null, 'scripts', true));
 
 
 // minified require.js

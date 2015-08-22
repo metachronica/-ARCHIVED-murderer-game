@@ -4,7 +4,7 @@
   "description": "",
   "main": "",
   "scripts": {
-    "install": "./gulp deploy && ./gulp --min"
+    "postinstall": "./gulp deploy && ./gulp --min"
   },
   "repository": {
     "type": "git",

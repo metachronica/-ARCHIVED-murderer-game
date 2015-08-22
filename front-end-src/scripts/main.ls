@@ -18,8 +18,8 @@ html = document.get-elements-by-tag-name \html .0
 
 is-bool-field = (name)->
 	<[ is has ]> # prefixes
-	|> map (-> "#{it}-")
-	|> any (-> (name.index-of it) is 0)
+		|> map (-> "#{it}-")
+		|> any (-> (name.index-of it) is 0)
 
 cfg =
 	<[
@@ -27,28 +27,27 @@ cfg =
 		revision
 		static-dir
 	]>
-	|> map (-> [it, html.get-attribute "data-#{it}"]              )
-	|> map (-> it.1 = it.1 is \true if it.0 |> is-bool-field ; it )
-	|> map (-> it.0 |>= camelize ; it                             )
-	|> pairs-to-obj
+		|> map (-> [it, html.get-attribute "data-#{it}"]              )
+		|> map (-> it.1 = it.1 is \true if it.0 |> is-bool-field ; it )
+		|> map (-> it.0 |>= camelize ; it                             )
+		|> pairs-to-obj
 
 shim  = {}
-paths = {}
+paths =
+	\promise : \shim/promise
+	\prelude : \shim/prelude
+	\cbtool  : \utils/cbtool
 
 libs-paths =
-	jquery:
-		"jquery/dist/jquery#{unless cfg.is-debug then '.min' else ''}"
-	snap:
-		"snap.svg/dist/snap.svg#{unless cfg.is-debug then '-min' else ''}"
-	underscore:
-		"underscore/underscore#{unless cfg.is-debug then '-min' else ''}"
-	backbone:
-		"backbone/backbone#{unless cfg.is-debug then '-min' else ''}"
-	async:
-		"async/#{unless cfg.is-debug then 'dist/async.min' else 'lib/async'}"
+	\es6-promise : \es6-promise/promise.min
+	\jquery      : \jquery/dist/jquery.min
+	\snap        : \snap.svg/dist/snap.svg-min
+
+if cfg.is-debug
+	libs-paths |>= Obj.map (-> it - /.min/ - /-min/)
 
 # add static directory prefix for libs paths
-libs-paths = libs-paths |> Obj.map (-> "#{cfg.static-dir}/bower/#{it}")
+libs-paths |>= Obj.map (-> "#{cfg.static-dir}/bower/#{it}")
 
 paths <<< libs-paths
 
@@ -65,15 +64,14 @@ requirejs.config {
 	paths
 }
 
-($) <-! requirejs <[ jquery ]>
-
-$ html .data \cfg, cfg
-
-unless document.get-element-by-id \game
-	throw new Error 'Fak. No game. No murders.'
+$, cfg-module, loader <-! requirejs <[ jquery cfg loader ]>
 
 <-! $ # dom ready
 
-(game) <-! requirejs <[ game ]>
+const $game = $ \#game
 
-game.initialize $ \#game
+unless $game.0?
+	throw new Error 'Fak. No game. No murders.'
+
+cfg-module.set cfg
+loader.initialize $game

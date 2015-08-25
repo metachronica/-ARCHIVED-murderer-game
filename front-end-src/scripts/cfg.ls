@@ -4,4 +4,4 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-define -> set: (!-> this <<< it)
+define -> set: (!-> @ <<< it)

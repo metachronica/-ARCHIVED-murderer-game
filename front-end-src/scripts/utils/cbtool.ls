@@ -6,7 +6,7 @@
 
 prelude, Promise <- define <[ prelude promise ]>
 
-{head, tail} = prelude
+{head, tail, obj-to-pairs, keys, values, map, pairs-to-obj, zip} = prelude
 
 cbok = (cb)-> !->
 	args = Array::slice.call arguments
@@ -21,7 +21,7 @@ cbcar = (car, cb)->
 	throw err if err?
 	args |> tail |> cb.apply null, _
 
-p2cb = (promise, cb) !->
+p2cb = !(promise, cb)->
 	
 	unless promise instanceof Promise
 		err = new Error "'promise' isn't instance of Promise"
@@ -32,7 +32,7 @@ p2cb = (promise, cb) !->
 		.then  (!-> cb.bind null, null, it |> set-timeout _, 0)
 		.catch (!-> cb.bind null, it       |> set-timeout _, 0)
 
-p2cbok = (promise, cb) !->
+p2cbok = !(promise, cb)->
 	
 	unless promise instanceof Promise
 		err = new Error "'promise' isn't instance of Promise"
@@ -41,11 +41,24 @@ p2cbok = (promise, cb) !->
 	
 	promise
 		.then (!-> cb.bind null, it |> set-timeout _, 0)
-		.catch (err)!->
+		.catch !(err)->
 			let err
 				err = new Error "'err' is empty" unless err?
 				console.error \cbtool:p2cbok, 'catch', err, (err.stack or null)
 				throw err
 			|> set-timeout _, 0
 
-{cbok, cbcar, p2cb, p2cbok}
+# returns promise with key-val object instead of array by Promise.all
+op2p = (obj)->
+	resolve, reject <-! new Promise _
+	obj
+		|> values
+		|> Promise.all
+		|> (.then \
+			(!-> it |> zip (obj |> keys) |> pairs-to-obj |> resolve),
+			reject)
+
+op2cb = !(obj, cb)-> obj |> op2p |> p2cb _, cb
+op2cbok = !(obj, cb)-> obj |> op2p |> p2cbok _, cb
+
+{cbok, cbcar, p2cb, p2cbok, op2p, op2cb, op2cbok}

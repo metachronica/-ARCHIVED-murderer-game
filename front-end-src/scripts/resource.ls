@@ -20,7 +20,7 @@
 	cfg
 ]>
 
-{map, pairs-to-obj, keys, Obj} = prelude
+{map, pairs-to-obj, keys, Obj, Func} = prelude
 {p2cb} = cbtool
 
 /**
@@ -35,28 +35,25 @@ resources = {}
  *
  * load(res-name :: string) -> Promise
  */
-load = (res-name)->
-	
-	# already loaded
-	x = resources[res-name] ; return x if x?
-	
-	resources[res-name] = new Promise !(resolve, reject)->
+load = (res-name) ->
+	resources[res-name] = new Promise (resolve, reject) !->
 		$.ajax do
 			url: "#{cfg.static-dir}/images/#{res-name}.svg"
 			method: \GET
 			data-type: \text
-			success: (data)!-> resolve data
+			success: (data) !-> resolve data
 			error: !->
 				msg = "Load resource '#{res-name}' error"
 				console.error msg
 				reject msg
+load |>= Func.memoize # return cached promise if already loaded
 
 /**
  * Get element from resource.
  *
  * get(res-name :: string, el-id :: string, [space :: number])
  */
-get = (res-name, el-id, {space=2})-->
+get = (res-name, el-id, {space=2}) -->
 	
 	resolve, reject <-! new Promise _
 	
@@ -65,12 +62,14 @@ get = (res-name, el-id, {space=2})-->
 		reject err
 		return
 	
+	# parse text of SVG file by Snap
 	try
 		f = data |> Snap.parse
 	catch
 		reject e
 		return
 	
+	# find element of resource
 	try
 		el = f.select "##{el-id}"
 	catch

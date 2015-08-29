@@ -12,7 +12,7 @@ prelude, Promise <- define <[ prelude promise ]>
 # automatically errors handling
 # example:
 #   fs.read-file \filename, cbok (!-> console.log 'file contents', it)
-cbok = (cb)-> !->
+cbok = (cb) -> !->
 	
 	args = Array::slice.call arguments
 	err  = args |> head
@@ -27,19 +27,19 @@ cbok = (cb)-> !->
 # automatically errors handling
 # currying support
 # example:
-#   f = (foo, bar, cb)--> cb null, {foo, bar}
+#   f = (foo, bar, cb) --> cb null, {foo, bar}
 #   car-f = f 10, 20
 #   o <-! cbcar car-f
 #   console.log \foo, o.foo
 #   console.log \bar, o.bar
-cbcar = (car, cb)-> car cbok cb
+cbcar = (car, cb) -> car cbok cb
 
 # wrap promise and delegate to callback
 # example:
 #   err, result <-! p2cb promise
 #   throw err if err?
 #   console.log 'promise result', result
-p2cb = !(promise, cb)->
+p2cb = (promise, cb) !->
 	
 	unless promise instanceof Promise
 		err = new Error "'promise' isn't instance of Promise"
@@ -56,7 +56,7 @@ p2cb = !(promise, cb)->
 # example:
 #   result <-! p2cbok promise
 #   console.log 'promise result', result
-p2cbok = !(promise, cb)->
+p2cbok = (promise, cb) !->
 	
 	unless promise instanceof Promise
 		err = new Error "'promise' isn't instance of Promise"
@@ -65,7 +65,7 @@ p2cbok = !(promise, cb)->
 	
 	promise
 		.then (!-> cb.bind null, it |> set-timeout _, 0)
-		.catch !(err)->
+		.catch (err) !->
 			let err
 				err = new Error "'err' is empty" unless err?
 				console.error \cbtool:p2cbok, 'catch', err, (err.stack or null)
@@ -86,7 +86,7 @@ p2cbok = !(promise, cb)->
 #       console.log it.bar
 #     ),
 #     (!-> throw it))
-op2p = (obj)->
+op2p = (obj) ->
 	resolve, reject <-! new Promise _
 	obj
 		|> values
@@ -104,7 +104,7 @@ op2p = (obj)->
 #     throw err if err?
 #     console.log \foo, results.foo
 #     console.log \bar, results.bar
-op2cb = !(obj, cb)-> obj |> op2p |> p2cb _, cb
+op2cb = (obj, cb) !-> obj |> op2p |> p2cb _, cb
 
 # transform object of promises to callback
 # with first `err` argument shifted
@@ -116,7 +116,7 @@ op2cb = !(obj, cb)-> obj |> op2p |> p2cb _, cb
 #   results <-! op2cbok promises-obj
 #     console.log \foo, results.foo
 #     console.log \bar, results.bar
-op2cbok = !(obj, cb)-> obj |> op2p |> p2cbok _, cb
+op2cbok = (obj, cb) !-> obj |> op2p |> p2cbok _, cb
 
 # export
 {cbok, cbcar, p2cb, p2cbok, op2p, op2cb, op2cbok}

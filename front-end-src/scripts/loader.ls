@@ -4,25 +4,21 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-cfg, R, cbtool, prelude, $ <- define <[ cfg resource cbtool prelude jquery ]>
+cfg, cbtool, prelude, sb <- define <[ cfg cbtool prelude sandbox ]>
 
-{each, obj-to-pairs, map, camelize, pairs-to-obj} = prelude
+{each, obj-to-pairs, map, camelize, pairs-to-obj, Obj} = prelude
 {op2cbok} = cbtool
 
-initialize = ($wrapper)!->
+init = !->
 	
-	cfg.set $app: $wrapper
 	{$app} = cfg
 	
-	resource = R.get \loading-screen
-	
-	res-promises =
-		<[ death loader-bar ]>
-			|> map (-> [ (it |> camelize), (resource it, {}) ])
-			|> pairs-to-obj
-	
-	results <-! op2cbok res-promises
-	{death, loader-bar} = results
+	# h5px, 56pt
+	r <-! op2cbok (
+		sb.request-resource do
+			\loading-screen.bloody-hand : \hand
+		|> Obj.map (-> it {})
+	)
 	
 	$game = $ \<div/>, class: \game
 	$app.html $game
@@ -32,9 +28,11 @@ initialize = ($wrapper)!->
 	$loader |> $game.html
 	
 	do
-		\.death        : death
-		\.progress-bar : loader-bar
+		\.hand : r.hand
 	|> obj-to-pairs
 	|> each (!-> $loader.find it.0 .get 0 |> it.1.append-to)
 
-{initialize}
+destroy = !->
+	void
+
+{init, destroy}

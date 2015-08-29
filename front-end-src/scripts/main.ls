@@ -16,7 +16,7 @@
 
 html = document.get-elements-by-tag-name \html .0
 
-is-bool-field = (name)->
+is-bool-field = (name) ->
 	<[ is has ]> # prefixes
 		|> map (-> "#{it}-")
 		|> any (-> (name.index-of it) is 0)
@@ -57,21 +57,20 @@ requirejs.config {
 		v=#{
 			unless cfg.is-debug
 			then cfg.revision
-			else new Date!.getTime!
+			else do Date.now
 		}
 	"
 	shim
 	paths
 }
 
-$, cfg-module, loader <-! requirejs <[ jquery cfg loader ]>
+$, cfg-module, loader <-! requirejs <[ jquery cfg loader sandbox ]>
 
 <-! $ # dom ready
 
-const $game = $ \#game
+$main-block = $ \#game
+$main-block.0 ? throw new Error 'Fak. No game. No murders.'
 
-unless $game.0?
-	throw new Error 'Fak. No game. No murders.'
+{} <<< cfg <<< { $app: $main-block } |> cfg-module.set
 
-cfg-module.set cfg
-loader.initialize $game
+do loader.init

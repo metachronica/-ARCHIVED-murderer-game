@@ -4,14 +4,12 @@
  * @see {@link https://www.gnu.org/licenses/agpl-3.0.txt|License}
  */
 
-cfg, cbtool, prelude, sb <- define <[ cfg cbtool prelude sandbox ]>
+cbtool, prelude <- define <[ cbtool prelude ]>
 
-{each, obj-to-pairs, map, camelize, pairs-to-obj, Obj} = prelude
+{Obj} = prelude
 {op2cbok} = cbtool
 
-init = !->
-	
-	{$app} = cfg
+init = (sb)!->
 	
 	# h5px, 56pt
 	r <-! op2cbok (
@@ -20,19 +18,16 @@ init = !->
 		|> Obj.map (-> it {})
 	)
 	
-	$game = $ \<div/>, class: \game
-	$app.html $game
-	cfg.set $game: $game
+	<-! sb.radio-trigger \game-block-init
 	
-	$loader = $ \#loader-tpl .text! |> $
-	$loader |> $game.html
+	tpl-block = sb.get-tpl-block \loader
+	tpl-block |> sb.put-tpl-block
 	
 	do
 		\.hand : r.hand
-	|> obj-to-pairs
-	|> each (!-> $loader.find it.0 .get 0 |> it.1.append-to)
+	|> sb.put-elems tpl-block
 
-destroy = !->
-	void
+destroy = (sb)!->
+	#sb.radio-off
 
 {init, destroy}

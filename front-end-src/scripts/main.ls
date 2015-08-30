@@ -12,6 +12,7 @@
 	Obj
 	map
 	any
+	each
 } = require \prelude-ls
 
 html = document.get-elements-by-tag-name \html .0
@@ -64,7 +65,7 @@ requirejs.config {
 	paths
 }
 
-$, cfg-module, loader <-! requirejs <[ jquery cfg loader sandbox ]>
+$, cfg-module, loader, SandBox <-! requirejs <[ jquery cfg loader sandbox ]>
 
 <-! $ # dom ready
 
@@ -72,5 +73,25 @@ $main-block = $ \#game
 $main-block.0 ? throw new Error 'Fak. No game. No murders.'
 
 {} <<< cfg <<< { $app: $main-block } |> cfg-module.set
+
+main-sb = new SandBox \main
+
+main-sb.radio-on \game-block-init, (cb) !->
+	
+	# already initialized
+	if cfg-module.$game?
+		do cb if cb?
+		return
+	
+	$game = $ \<div/>, class: \game
+	cfg-module.$app.html $game
+	cfg-module.set $game: $game
+	
+	main-sb.radio-trigger \game-block-initialized, $game
+	do cb if cb?
+
+loader-sb = new SandBox \loader
+<[ init destroy ]>
+	|> each (!-> loader[it] .= bind null, loader-sb)
 
 do loader.init

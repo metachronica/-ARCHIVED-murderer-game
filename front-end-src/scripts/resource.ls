@@ -77,7 +77,9 @@ get = (res-name, el-id, {space=2}) -->
 		return
 	
 	unless el?
-		reject new Error "Element '##{el-id}' not found in resourse '#{res-name}'"
+		reject new Error "
+			Element '##{el-id}' not found in resourse '#{res-name}'
+		"
 		return
 	
 	clone = Snap!
@@ -92,7 +94,9 @@ get = (res-name, el-id, {space=2}) -->
 		|> Obj.map Math.round
 		|> clone.attr
 	
-	target.attr transform: "T-#{bbox.x - space},-#{bbox.y - space}"
+	matrix = new Snap.Matrix
+	matrix.translate -(bbox.x - space), -(bbox.y - space)
+	target.transform matrix
 	
 	resolve clone
 

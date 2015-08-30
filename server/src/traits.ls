@@ -10,6 +10,8 @@ require! {
 	\./config : {config}
 }
 
+revision = config.DEBUG and do Date.now or revision
+
 traits = {
 	is-debug: config.DEBUG
 	revision

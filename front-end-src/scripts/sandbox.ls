@@ -28,6 +28,8 @@
 	apply
 	partition
 	is-type
+	Obj
+	Func
 } = prelude
 
 load-res-elem = (res, elem) -->
@@ -49,6 +51,9 @@ parse-res-obj =
 	>> (map -> it.1 |> map (load-res-elem R.get it.0))
 	>> (fold (++), [])
 	>> (pairs-to-obj)
+
+$w = $ window
+
 
 class SandBox
 	
@@ -73,6 +78,14 @@ class SandBox
 		obj
 			|> obj-to-pairs
 			|> each (!-> $block.find it.0 .get 0 |> it.1.append-to)
+	
+	
+	get-ws-size: -> w: $w.width!, h: $w.height!
+	get-min-size: Func.memoize ->
+		do
+			w: cfg.$app.css \min-width
+			h: cfg.$app.css \min-height
+		|> Obj.map (parse-int _, 10)
 	
 	
 	# radio

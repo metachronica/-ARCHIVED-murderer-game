@@ -35,8 +35,10 @@ body
 
 #game
 	height 100%
-	min-height $min-height
 	overflow hidden
+	
+	min-width  $min-width
+	min-height $min-height
 	
 	.at-start
 		box-sizing border-box
@@ -45,9 +47,10 @@ body
 	.game
 		margin 0 auto
 		height 100%
-		min-height $min-height
 		transform translateY(-50%)
-		top 50%
-		position relative
+		relative top 50%
+		
+		min-width  $min-width
+		min-height $min-height
 		
 		@import 'views/loader'

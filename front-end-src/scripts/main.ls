@@ -90,6 +90,10 @@ main-sb.radio-on \game-block-init, (cb) !->
 	main-sb.radio-trigger \game-block-initialized, $game
 	do cb if cb?
 
+$w = $ window
+$w.on \resize.main-sandbox, !->
+	main-sb.radio-trigger \workspace-resized, $w.width!, $w.height!
+
 loader-sb = new SandBox \loader
 <[ init destroy ]>
 	|> each (!-> loader[it] .= bind null, loader-sb)

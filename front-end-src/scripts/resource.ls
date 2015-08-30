@@ -122,6 +122,8 @@ get = (
 	matrix.translate -(bbox.x - offset-l), -(bbox.y - offset-t)
 	target.transform matrix
 	
+	clone.general-element = target
+	
 	resolve clone
 
 {load, get}

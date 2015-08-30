@@ -51,9 +51,28 @@ load |>= Func.memoize # return cached promise if already loaded
 /**
  * Get element from resource.
  *
- * get(res-name :: string, el-id :: string, [space :: number])
+ * get(res-name :: string, el-id :: string, [offset :: number])
  */
-get = (res-name, el-id, {space=2}) -->
+get = (
+	res-name,
+	el-id,
+	{
+		offset   = 2
+		
+		offset-x = null
+		offset-y = null
+		
+		offset-l = null
+		offset-r = null
+		offset-t = null
+		offset-b = null
+	}
+) -->
+	
+	offset-l ?= offset-x ? offset
+	offset-r ?= offset-x ? offset
+	offset-t ?= offset-y ? offset
+	offset-b ?= offset-y ? offset
 	
 	resolve, reject <-! new Promise _
 	
@@ -88,14 +107,19 @@ get = (res-name, el-id, {space=2}) -->
 	bbox = target.get-b-box!
 	
 	<[ width height ]>
-		|> map (-> [it, bbox[it]])
+		|> map (it)->
+			[it].concat [
+				bbox[it] + switch it
+				| \width  => offset-l + offset-r
+				| \height => offset-t + offset-b
+				| _       => ...
+				|> Math.round
+			]
 		|> pairs-to-obj
-		|> Obj.map (+ space * 2)
-		|> Obj.map Math.round
 		|> clone.attr
 	
 	matrix = new Snap.Matrix
-	matrix.translate -(bbox.x - space), -(bbox.y - space)
+	matrix.translate -(bbox.x - offset-l), -(bbox.y - offset-t)
 	target.transform matrix
 	
 	resolve clone

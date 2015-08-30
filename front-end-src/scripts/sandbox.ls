@@ -64,10 +64,11 @@ class SandBox
 	
 	get-tpl-block: (tpl-name) -> $ "##{tpl-name}-tpl" .text! |> $
 	put-tpl-block: ($tpl-block) !-> $tpl-block |> @_$game.html
-	put-elems: ($tpl-block, obj) !-->
+	
+	put-elems: ($block, obj) !-->
 		obj
 			|> obj-to-pairs
-			|> each (!-> $tpl-block.find it.0 .get 0 |> it.1.append-to)
+			|> each (!-> $block.find it.0 .get 0 |> it.1.append-to)
 	
 	
 	# radio

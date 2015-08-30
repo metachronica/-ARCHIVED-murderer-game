@@ -27,6 +27,7 @@
 	fold
 	apply
 	partition
+	is-type
 } = prelude
 
 load-res-elem = (res, elem) -->
@@ -34,8 +35,11 @@ load-res-elem = (res, elem) -->
 		|> drop-while (isnt \.) # drop resource prefix
 		|> tail # drop '.'
 		|> res
+		|> (-> (is-type \Array elem.1) and (it elem.1.1) or it)
 		|> replicate 1 # wrap to list
-		|> (++ (elem.1 |> camelize))
+		|> (++  (is-type \Array elem.1)
+			and (elem.1.0 |> camelize)
+			or  (elem.1   |> camelize))
 		|> reverse
 
 parse-res-obj =

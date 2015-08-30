@@ -51,7 +51,7 @@ load |>= Func.memoize # return cached promise if already loaded
 /**
  * Get element from resource.
  *
- * get(res-name :: string, el-id :: string, [offset :: number])
+ * get(res-name :: string, el-id :: string)
  */
 get = (
 	res-name,

@@ -6,26 +6,13 @@
 
 cbtool, prelude, Snap <- define <[ cbtool prelude snap ]>
 
-{Obj, List} = prelude
 {op2cbok} = cbtool
 
 init = (sb)!->
 	
 	# h5px, 56pt
-	r <-! op2cbok (
-		sb.request-resource do
-			\loading-screen.bloody-hand : \hand
-		|> Obj.obj-to-pairs
-		|> List.map (it) ->
-			[
-				it.0
-				it.1 \
-					switch
-					| it.0 is \hand => offset-l: -4px
-					| otherwise     => {}
-			]
-		|> Obj.pairs-to-obj
-	)
+	r <-! op2cbok sb.request-resource do
+		\loading-screen.bloody-hand : [ \hand, offset-l: -4px ]
 	
 	<-! sb.radio-trigger \game-block-init
 	
